@@ -1,5 +1,5 @@
-title: Legend of Mortal on Apple Silicon Mac
-description: 实机验证的《活侠传》macOS 运行、字体修复与 BepInEx Mod 排障资料库。
+title: 在 Mac 上也能玩《活侠传》，还能安装 Mod
+description: 在 Apple Silicon Mac 上运行《活侠传》并安装、修复 BepInEx Mod 的实机验证指南。
 theme: minima
 markdown: kramdown
 kramdown:

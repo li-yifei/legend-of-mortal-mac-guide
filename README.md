@@ -1,21 +1,21 @@
 ---
 layout: home
-title: 《活侠传》Apple Silicon Mac 运行指南
+title: 在 Mac 上也能玩《活侠传》，还能安装 Mod
 permalink: /
 ---
 
-# 《活侠传》Apple Silicon Mac 运行指南
+# 在 Mac 上也能玩《活侠传》，还能安装 Mod
 
-实机验证的 macOS 运行、字体修复与 BepInEx Mod 排障记录。
+这是一份经过实机验证的 macOS 指南，介绍如何在 Apple Silicon Mac 上运行《活侠传》，并安装和修复 BepInEx Mod。
 
-## 语言
+## 多语言指南
 
 - [简体中文指南](https://li-yifei.github.io/legend-of-mortal-mac-guide/docs/guide.zhs/)
 - [繁體中文指南](https://li-yifei.github.io/legend-of-mortal-mac-guide/docs/guide.zht/)
 - [日本語ガイド](https://li-yifei.github.io/legend-of-mortal-mac-guide/docs/guide.ja/)
 - [한국어 가이드](https://li-yifei.github.io/legend-of-mortal-mac-guide/docs/guide.ko.html)
 
-## 日文 Mod 案例
+## Mod 案例
 
 同一套 Doorstop、Unity corlibs 与 BepInEx Wine 修复路径，也适用于 DiceMaster 模组。
 
