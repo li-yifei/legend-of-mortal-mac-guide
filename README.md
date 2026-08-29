@@ -12,6 +12,12 @@ Apple Silicon Mac에서 《활협전 / Legend of Mortal》을 실행하고 글�
 - [日本語](docs/guide.ja.md)
 - [한국어](docs/guide.ko.md)
 
+## Case study: Japanese Mod repair
+
+- [简体中文案例](docs/cases/japanese-mod.zh-CN.md)
+- [日本語ケース](docs/cases/japanese-mod.ja.md)
+- [한국어 사례](docs/cases/japanese-mod.ko.md)
+
 ## Agent skill
 
 The repository includes an installable Codex/Agent Skill:
@@ -45,7 +51,8 @@ This is a versioned field report. A Steam, game, Wine, BepInEx, or macOS update 
 ├── docs/
 │   ├── guide.zh-CN.md
 │   ├── guide.ja.md
-│   └── guide.ko.md
+│   ├── guide.ko.md
+│   └── cases/japanese-mod.*.md
 └── skills/
     └── run-legend-of-mortal-on-mac/
         ├── SKILL.md

@@ -106,6 +106,8 @@ fonts → allfonts
 
 ## 5. Doorstop/BepInEx Modを修復する
 
+実際の調査と修復の全記録：[ケース：Wine 10 / x86版『活俠傳』で日本語化Modを読み込む](cases/japanese-mod.ja.md)。
+
 ### Doorstop
 
 `winecfg → Libraries`でゲーム用に設定します。

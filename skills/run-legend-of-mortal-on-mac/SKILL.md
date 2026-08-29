@@ -42,7 +42,7 @@ Read [references/verified-case.md](references/verified-case.md) when comparing a
 1. **Wrapper or Windows Steam startup**: read [references/install-renderer.md](references/install-renderer.md). Separate Steam transport/webhelper failures from game graphics failures.
 2. **`Failed to initialize graphics` or D3D11 device creation**: read [references/install-renderer.md](references/install-renderer.md). Trust loaded modules and `Player.log` over wrapper toggles.
 3. **Missing shop price or money totals**: read [references/font-repair.md](references/font-repair.md). Confirm the symptom and prefix font state before installing a broad font set.
-4. **BepInEx files present and plugins absent**: read [references/mod-repair.md](references/mod-repair.md). Trace Doorstop → Preloader → Chainloader → Plugin.
+4. **BepInEx files present and plugins absent**: read [references/mod-repair.md](references/mod-repair.md). Trace Doorstop → Preloader → Chainloader → Plugin. For the Japanese Mod or the shared DiceMaster failure, also read [references/japanese-mod-case.md](references/japanese-mod-case.md).
 5. **Input lock, sleep/wake freeze, lost audio, external-display trouble, or repeated launch failure**: read [references/runtime-operations.md](references/runtime-operations.md).
 
 ## Change protocol

@@ -151,6 +151,8 @@ fonts → allfonts
 
 ## 5. 修复 Doorstop/BepInEx Mod 加载
 
+完整实战过程见：[案例：在 Wine 10 / x86《活侠传》中修复日语 Mod 加载](cases/japanese-mod.zh-CN.md)。
+
 ### 安装 Mod 时先做文件级备份
 
 对每个压缩包执行：

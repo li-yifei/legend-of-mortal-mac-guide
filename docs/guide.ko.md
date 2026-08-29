@@ -106,6 +106,8 @@ fonts → allfonts
 
 ## 5. Doorstop/BepInEx Mod 복구
 
+전체 조사 및 복구 과정: [사례: Wine 10 / x86 《활협전》에서 일본어 Mod 로드 복구](cases/japanese-mod.ko.md).
+
 ### Doorstop 로드
 
 `winecfg → Libraries`에서 게임 전용 설정을 추가합니다.
