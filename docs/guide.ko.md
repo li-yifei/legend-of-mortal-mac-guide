@@ -1,6 +1,6 @@
 # Apple Silicon Mac에서 《활협전》 실행하기: 설치·글꼴·Mod 복구
 
-[Home](../README.md) · [简体中文](guide.zh-CN.md) · [日本語](guide.ja.md)
+[Home](../README.md) · [繁體中文](guide.zht.md) · [简体中文](guide.zhs.md) · [日本語](guide.ja.md)
 
 이 문서는 2026년 8월 실제 장비에서 검증한 구성을 정리한 가이드입니다. 직접 구매한 《활협전 / Legend of Mortal》을 Sikarugir, Wine, Windows용 Steam으로 Apple Silicon Mac에서 실행하고 글꼴 및 BepInEx Mod 문제를 복구하는 과정을 다룹니다.
 
