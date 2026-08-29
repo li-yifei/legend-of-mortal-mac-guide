@@ -4,7 +4,7 @@ Use `skills/run-legend-of-mortal-on-mac/SKILL.md` for Legend of Mortal runtime w
 
 ## Repository scope
 
-- Maintain the human guides in Simplified Chinese, Japanese, and Korean.
+- Maintain the human guides in Simplified Chinese, Traditional Chinese, Japanese, and Korean.
 - Maintain the installable Agent Skill and its read-only diagnostics.
 - Keep technical claims versioned and evidence-backed.
 
