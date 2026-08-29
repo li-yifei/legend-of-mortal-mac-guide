@@ -1,0 +1,15 @@
+title: Legend of Mortal on Apple Silicon Mac
+description: 实机验证的《活侠传》macOS 运行、字体修复与 BepInEx Mod 排障资料库。
+theme: minima
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
+plugins:
+  - jekyll-seo-tag
+header_pages:
+  - docs/guide.zhs.md
+  - docs/guide.zht.md
+  - docs/guide.ja.md
+  - docs/guide.ko.md
