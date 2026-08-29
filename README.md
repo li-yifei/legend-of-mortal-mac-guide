@@ -1,12 +1,10 @@
 ---
 layout: home
-title: 在 Mac 上也能玩《活侠传》，还能安装 Mod
+title: 活侠传 macOS 指南 2026
 permalink: /
 ---
 
-在 Mac 上也能玩《活侠传》，还能安装 Mod。
-
-这是一份经过 Apple Silicon 实机验证的配置指南与排障记录，介绍如何在 macOS 上通过 Wine 运行自购正版《活侠传》，并安装、修复 BepInEx 模组。
+在 Mac 上也能玩《活侠传》，还能安装 Mod。这是一份基于 Apple Silicon 实机验证的配置指南与排障记录，介绍如何在 macOS 上通过 Wine 运行自购正版《活侠传》，并安装与修复 BepInEx 模组。
 
 ## TL;DR
 
@@ -26,7 +24,7 @@ permalink: /
 
 ## Mod 案例
 
-同一套 Doorstop、Unity corlibs 与 BepInEx Wine 修复路径，也适用于 DiceMaster 模组。
+同一套 Doorstop、Unity corlibs 与 BepInEx Wine 修复路径，已验证适用于日文 Mod 与 DiceMaster 模组。
 
 - [简体中文案例](https://li-yifei.github.io/legend-of-mortal-mac-guide/docs/cases/japanese-mod.zhs/)
 - [日本語ケース](https://li-yifei.github.io/legend-of-mortal-mac-guide/docs/cases/japanese-mod.ja/)
