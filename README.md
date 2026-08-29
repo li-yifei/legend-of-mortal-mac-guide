@@ -16,16 +16,16 @@ Apple Silicon Mac에서 《활협전 / Legend of Mortal》을 실행하고 글�
 
 ## Human guides
 
-- [简体中文](docs/guide.zhs.md)
-- [繁體中文](docs/guide.zht.md)
-- [日本語](docs/guide.ja.md)
-- [한국어](docs/guide.ko.md)
+- [简体中文](/legend-of-mortal-mac-guide/docs/guide.zhs/)
+- [繁體中文](/legend-of-mortal-mac-guide/docs/guide.zht/)
+- [日本語](/legend-of-mortal-mac-guide/docs/guide.ja/)
+- [한국어](/legend-of-mortal-mac-guide/docs/guide.ko/)
 
 ## Case study: Japanese Mod repair
 
-- [简体中文案例](docs/cases/japanese-mod.zhs.md)
-- [日本語ケース](docs/cases/japanese-mod.ja.md)
-- [한국어 사례](docs/cases/japanese-mod.ko.md)
+- [简体中文案例](/legend-of-mortal-mac-guide/docs/cases/japanese-mod.zhs/)
+- [日本語ケース](/legend-of-mortal-mac-guide/docs/cases/japanese-mod.ja/)
+- [한국어 사례](/legend-of-mortal-mac-guide/docs/cases/japanese-mod.ko/)
 
 ## Agent skill
 
@@ -110,4 +110,4 @@ The skill requires explicit user authorization before changing a live wrapper, W
 
 ## License
 
-Original documentation and scripts in this repository are released under the [MIT License](LICENSE). Third-party projects, binaries, trademarks, and game assets retain their own licenses and ownership.
+Original documentation and scripts in this repository are released under the [MIT License](/legend-of-mortal-mac-guide/LICENSE). Third-party projects, binaries, trademarks, and game assets retain their own licenses and ownership.
