@@ -1,0 +1,4 @@
+interface:
+  display_name: "Legend of Mortal on Mac"
+  short_description: "Run and repair Legend of Mortal on Apple Silicon"
+  default_prompt: "Use $run-legend-of-mortal-on-mac to install or diagnose Legend of Mortal on my Apple Silicon Mac."

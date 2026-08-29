@@ -1,0 +1,22 @@
+.DS_Store
+*.log
+*.tmp
+*.bak
+__pycache__/
+.idea/
+.vscode/
+
+# Never commit local game/runtime data.
+SteamWin.app/
+prefix/
+drive_c/
+steamapps/
+save*/
+*.dat
+*.sav
+*.zip
+*.dll
+*.so
+*.ttf
+*.ttc
+*.otf

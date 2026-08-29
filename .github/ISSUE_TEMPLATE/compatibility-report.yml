@@ -1,0 +1,40 @@
+name: Compatibility report
+description: Report a reproducible install, renderer, font, or Mod result
+title: "[Compatibility]: "
+labels:
+  - compatibility
+body:
+  - type: markdown
+    attributes:
+      value: Keep credentials, save files, account IDs, and personal paths out of this report.
+  - type: input
+    id: game_build
+    attributes:
+      label: Game version / Steam Build ID
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Mac, macOS, wrapper, Wine, and renderer versions
+    validations:
+      required: true
+  - type: textarea
+    id: conditions
+    attributes:
+      label: Conditions and steps
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Observed result
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Redacted evidence
+      description: Include relevant log lines, module paths, and hashes.
+    validations:
+      required: true
