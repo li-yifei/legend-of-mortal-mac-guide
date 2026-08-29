@@ -4,8 +4,6 @@ title: 在 Mac 上也能玩《活侠传》，还能安装 Mod
 permalink: /
 ---
 
-# 在 Mac 上也能玩《活侠传》，还能安装 Mod
-
 这是一份经过实机验证的 macOS 指南，介绍如何在 Apple Silicon Mac 上运行《活侠传》，并安装和修复 BepInEx Mod。
 
 ## 多语言指南

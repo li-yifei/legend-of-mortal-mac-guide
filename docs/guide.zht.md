@@ -4,8 +4,6 @@ title: 在 Apple Silicon Mac 上執行《活俠傳》：安裝、字型與 Mod �
 permalink: /docs/guide.zht/
 ---
 
-# 在 Apple Silicon Mac 上執行《活俠傳》：安裝、字型與 Mod 修復
-
 [返回首頁](../README.md) · [简体中文](guide.zhs.md) · [日本語](guide.ja.md) · [한국어](guide.ko.md)
 
 本文記錄一套在 2026 年 8 月經實機驗證可行的設定方案。適用於希望透過 Sikarugir、Wine 與 Windows 版 Steam 執行自行購買之正版《活俠傳》的 Apple Silicon Mac 使用者。

@@ -4,8 +4,6 @@ title: 在 Apple Silicon Mac 上运行《活侠传》：安装、字体与 Mod �
 permalink: /docs/guide.zhs/
 ---
 
-# 在 Apple Silicon Mac 上运行《活侠传》：安装、字体与 Mod 修复
-
 [返回首页](../README.md) · [繁體中文](guide.zht.md) · [日本語](guide.ja.md) · [한국어](guide.ko.md)
 
 本文记录了一套在 2026 年 8 月经实机验证可行的配置方案，适用于希望通过 Sikarugir、Wine 与 Windows 版 Steam 运行自购正版《活侠传》的 Apple Silicon Mac 用户。

@@ -4,8 +4,6 @@ title: Apple Silicon Macで『活俠傳』を動かす：インストール・�
 permalink: /docs/guide.ja/
 ---
 
-# Apple Silicon Macで『活俠傳』を動かす：インストール・フォント・Mod修復
-
 [ホーム](../README.md) · [繁體中文](guide.zht.md) · [简体中文](guide.zhs.md) · [한국어](guide.ko.md)
 
 本書は、2026年8月に実機検証を行い動作を確認した構成手順をまとめたものです。Sikarugir、Wine、およびWindows版Steamを経由して、自身で購入した正規版『活俠傳』（Legend of Mortal）をApple Silicon Mac上でプレイしたいユーザーを対象としています。

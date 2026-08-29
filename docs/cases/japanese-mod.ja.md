@@ -4,8 +4,6 @@ title: ケース：Wine 10 / x86版『活俠傳』で日本語化Modを読み込
 permalink: /docs/cases/japanese-mod.ja/
 ---
 
-# ケース：Wine 10 / x86版『活俠傳』で日本語化Modを読み込む
-
 [日本語ガイドへ戻る](../guide.ja.md) · [繁體中文](../guide.zht.md) · [简体中文](japanese-mod.zhs.md) · [한국어](japanese-mod.ko.md)
 
 ## 結論

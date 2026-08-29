@@ -4,8 +4,6 @@ title: 案例：Wine 10 / x86 版《活侠传》加载日文 Mod
 permalink: /docs/cases/japanese-mod.zhs/
 ---
 
-# 案例：Wine 10 / x86 版《活侠传》加载日文 Mod
-
 [返回简体中文指南](../guide.zhs.md) · [繁體中文](../guide.zht.md) · [日本語](japanese-mod.ja.md) · [한국어](japanese-mod.ko.md)
 
 ## 结论

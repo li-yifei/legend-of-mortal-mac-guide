@@ -4,8 +4,6 @@ title: 사례: Wine 10 / x86 《활협전》에서 일본어 Mod 로드 복구
 permalink: /docs/cases/japanese-mod.ko/
 ---
 
-# 사례: Wine 10 / x86 《활협전》에서 일본어 Mod 로드 복구
-
 [한국어 가이드로 돌아가기](../guide.ko.md) · [繁體中文](../guide.zht.md) · [简体中文](japanese-mod.zhs.md) · [日本語](japanese-mod.ja.md)
 
 ## 결론
