@@ -229,14 +229,34 @@ Chainloader initialized
 
 이후 각 플러그인이 순차적으로 로드됩니다. 검증 환경에서는 DiceMaster 및 일본어 Mod 관련 5개 플러그인이 Chainloader에 의해 정상 로드되었습니다. DiceMaster 모듈 역시 Wine 환경에서 `winhttp` override 누락, corlibs 스트립(Strip), BepInEx 플랫폼 초기화 예외로 인해 실행되지 않는 문제가 발생하지만, 본 절의 Doorstop / corlibs / BepInEx Wine 복구 경로를 통해 동일하게 완벽히 복구할 수 있습니다.
 
-## 6. 일상 운영 및 문제 해결 권장 사항
+## 6. 알려진 문제
+
+### 창 전환 후 제목 표시줄 클릭으로 조작 복구
+
+검증된 Build `20337760` 및 Sikarugir Wine `10.0` 환경에서 게임을 다른 macOS 앱으로 전환했다가 《활협전》으로 복귀했을 때, 화면은 정상 표시되지만 키보드·마우스·컨트롤러 입력이 게임 창에 즉시 인식되지 않는 현상이 발생할 수 있습니다.
+
+복구 순서:
+
+1. 《활협전》의 `Mortal` 창으로 다시 전환합니다.
+2. 창 상단의 macOS 제목 표시줄(아래 그림의 빨간색 화살표가 가리키는 어두운 영역)을 한 번 클릭합니다.
+3. 게임 화면으로 돌아가 조작을 계속합니다.
+
+![Mortal 창 제목 표시줄을 클릭해 게임 입력 복구](assets/window-titlebar-focus-recovery.png)
+
+Steam 전역 Overlay와 《활협전》 개별 Overlay를 끄면 발생 빈도를 낮출 수 있습니다. 제목 표시줄 클릭은 현재 검증된 즉시 복구 방법입니다. 근본 원인은 조사 중이며 Wine, Unity, macOS 사이의 창 포커스 전달과 관련된 동작으로 보입니다.
+
+| 게임 버전 | 발생 조건 | 결과 | 증거 | 신뢰도 |
+| --- | --- | --- | --- | --- |
+| Build `20337760` / `release_1.0.5000.13` | 다른 macOS 앱에서 Wine 게임 창으로 복귀 | `Mortal` 제목 표시줄 클릭 후 게임 조작 복구 | 실제 환경 재현 및 스크린샷 | 높음 |
+
+## 7. 일상 운영 및 문제 해결 권장 사항
 
 - Steam 오버레이(Overlay)를 전역 설정 및 《활협전》 개별 설정에서 비활성화하면, 다른 애플리케이션으로 전환한 후 키보드/마우스 입력이 먹통이 되는(잠기는) 현상을 예방할 수 있습니다.
 - 플레이 중에는 `caffeinate` 명령을 활용하여 시스템 절전 모드 진입을 방지하는 것을 권장합니다. 맥북 상판을 덮어 절전 모드로 진입했거나 화면 잠금 해제, 외장 디스플레이 연결/해제가 발생한 경우에는 게임, Windows용 Steam 및 wineserver 세션을 완전히 종료한 후 재시작하십시오.
 - Windows용 Steam이 장시간 백그라운드에 머무를 경우 `-applaunch` 실행 요청에 반응하지 않을 수 있습니다. Steam의 `gameprocess_log.txt`에 신규 로그가 기록되지 않는다면 해당 prefix의 Steam과 Wine 세션을 재시작하십시오.
 - 게임 및 Steam을 종료할 때는 Windows용 Steam 메뉴의 `Steam → Exit`를 사용하여 정상적으로 종료하십시오. macOS Dock에 표시되는 Wine 아이콘은 단순 창 프록시입니다.
 
-## 7. 읽기 전용 진단 스크립트 활용
+## 8. 읽기 전용 진단 스크립트 활용
 
 ```bash
 skills/run-legend-of-mortal-on-mac/scripts/inspect-lom-wrapper.sh \

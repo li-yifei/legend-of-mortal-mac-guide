@@ -225,14 +225,34 @@ Chainloader initialized
 
 隨後應能看到各外掛程式依序載入的記錄。在已驗證環境中，DiceMaster 與日文 Mod 的 5 個外掛程式均已由 Chainloader 正常載入。
 
-## 6. 日常維護建議
+## 6. 已知問題
+
+### 切換視窗後需按一下標題列以恢復控制
+
+在已驗證的 Build `20337760`、Sikarugir Wine `10.0` 環境中，從遊戲切換至其他 macOS 應用程式再切回《活俠傳》後，遊戲畫面雖正常顯示，但鍵盤、滑鼠或控制器輸入有時無法立即在遊戲視窗內生效。
+
+恢復步驟：
+
+1. 切回《活俠傳》的 `Mortal` 視窗；
+2. 按一下視窗頂端的 macOS 標題列（即下圖紅色箭頭所指的深色區域）一次；
+3. 返回遊戲畫面繼續操作。
+
+![按一下 Mortal 視窗標題列以恢復遊戲輸入](assets/window-titlebar-focus-recovery.png)
+
+關閉 Steam 全域 Overlay 與《活俠傳》的個別遊戲 Overlay 可降低發生頻率。按一下標題列是目前已驗證的即時恢復方式。根本原因仍在排查中，現象符合 Wine、Unity 與 macOS 之間視窗焦點交接異常的表現。
+
+| 遊戲版本 | 觸發條件 | 結果 | 證據 | 信心度 |
+| --- | --- | --- | --- | --- |
+| Build `20337760` / `release_1.0.5000.13` | 從其他 macOS App 切回 Wine 遊戲視窗 | 按一下 `Mortal` 標題列後恢復遊戲控制 | 實機重現與截圖 | 高 |
+
+## 7. 日常維護建議
 
 - 建議關閉 Steam 全域遊戲內嵌介面（Overlay）與《活俠傳》的單一遊戲內嵌介面，降低切換應用程式視窗後的按鍵輸入鎖死機率。
 - 遊玩期間建議搭配 `caffeinate` 防止系統休眠。若發生闔蓋休眠、鎖定畫面或外接顯示器熱插拔，建議徹底重新啟動遊戲、Windows 版 Steam 與 wineserver 工作階段。
 - Windows 版 Steam 長時間在背景閒置後，可能不再回應 `-applaunch` 啟動指令。若 Steam `gameprocess_log.txt` 中無新增記錄，請重新啟動該 prefix 下的 Steam 與 Wine 工作階段。
 - 結束遊戲與 Steam 時，請使用 Windows 版 Steam 選單中的 `Steam → Exit` 正常結束。macOS Dock 中的 Wine 圖示僅為視窗代理。
 
-## 7. 使用本存放庫提供的唯讀檢查指令碼
+## 8. 使用本存放庫提供的唯讀檢查指令碼
 
 ```bash
 skills/run-legend-of-mortal-on-mac/scripts/inspect-lom-wrapper.sh \

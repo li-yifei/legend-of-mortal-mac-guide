@@ -225,14 +225,34 @@ Chainloader initialized
 
 随后应能看到各插件依次加载的记录。在已验证环境中，DiceMaster 与日文 Mod 的 5 个插件均已由 Chainloader 成功加载。DiceMaster 模组在 Wine 下同样受制于缺少 `winhttp` override、corlibs 裁剪与 BepInEx 初始化异常，通过本节的 Doorstop / corlibs / BepInEx Wine 修复路径同样可以完全修复。
 
-## 6. 日常使用建议
+## 6. 已知问题
+
+### 切换窗口后需点击标题栏恢复控制
+
+在已验证的 Build `20337760`、Sikarugir Wine `10.0` 环境中，从游戏切换到其他 macOS 应用再切回《活侠传》后，游戏画面虽正常显示，但键盘、鼠标或手柄输入有时无法立即响应。
+
+恢复步骤：
+
+1. 切回《活侠传》的 `Mortal` 窗口；
+2. 单击窗口顶部的 macOS 标题栏（即下图中红色箭头所指的深色区域）一次；
+3. 返回游戏画面继续操作。
+
+![单击 Mortal 窗口标题栏以恢复游戏输入](assets/window-titlebar-focus-recovery.png)
+
+关闭 Steam 全局 Overlay 与《活侠传》的单独 Overlay 可降低出现频率。单击标题栏是当前已验证的即时恢复方案。根本原因仍在排查中，现象符合 Wine、Unity 与 macOS 之间窗口焦点交接异常的表现。
+
+| 游戏版本 | 触发条件 | 结果 | 证据 | 置信度 |
+| --- | --- | --- | --- | --- |
+| Build `20337760` / `release_1.0.5000.13` | 从其他 macOS App 切回 Wine 游戏窗口 | 单击 `Mortal` 标题栏后恢复游戏控制 | 实机复现与截图 | 高 |
+
+## 7. 日常使用建议
 
 - 建议关闭 Steam 全局及《活侠传》单独的游戏内嵌界面（Overlay），以降低切换应用窗口时按键锁死的概率。
 - 游玩期间建议配合 `caffeinate` 防止系统休眠。若发生合盖休眠、锁屏或外接显示器热插拔，建议彻底重启游戏、Windows 版 Steam 与 wineserver 会话。
 - Windows 版 Steam 长时间在后台挂起后，可能不再响应 `-applaunch` 启动指令。若 Steam `gameprocess_log.txt` 中无新增记录，请重启该 prefix 下的 Steam 与 Wine 会话。
 - 退出游戏与 Steam 时，请使用 Windows 版 Steam 菜单中的 `Steam → Exit` 正常退出。macOS 程序坞（Dock）中的 Wine 图标仅为窗口代理。
 
-## 7. 运行只读检查脚本
+## 8. 运行只读检查脚本
 
 ```bash
 skills/run-legend-of-mortal-on-mac/scripts/inspect-lom-wrapper.sh \
