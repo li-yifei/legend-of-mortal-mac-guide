@@ -6,7 +6,7 @@ permalink: /docs/guide.zhs/
 
 [返回首页](../README.md) · [繁體中文](guide.zht.md) · [日本語](guide.ja.md) · [한국어](guide.ko.md)
 
-本文记录了一套在 2026 年 8 月经实机验证可行的配置方案，适用于希望通过 Sikarugir、Wine 与 Windows 版 Steam 运行自购正版《活侠传》的 Apple Silicon Mac 用户。
+本文记录一套经实机验证的配置方案（2026 年 8 月），适用于在 Apple Silicon Mac 上通过 Sikarugir、Wine 与 Windows 版 Steam 运行正版《活侠传》。
 
 ## 已验证环境
 
@@ -20,17 +20,17 @@ permalink: /docs/guide.zhs/
 | 图形后端 | 32 位 DXMT，D3D11 → Metal |
 | Mod 框架 | BepInEx `6.0.0-be.785` x86 Mono |
 
-Wine、Steam、macOS 与游戏本身的更新均可能影响兼容性与运行结果。在进行任何调整时，请务必记录版本号、保留日志并创建带时间戳的备份。
+Wine、Steam、macOS 及游戏本身的更新均可能影响兼容性。进行任何修改前，请记录版本号、保留日志并做好带时间戳的备份。
 
 ## 1. 建立独立的 Windows 版 Steam 包装器
 
 请先准备以下环境与资源：
 
-- Apple Silicon Mac 与 macOS 14 或更高版本；
-- Rosetta 2；
-- [Sikarugir 官方项目](https://github.com/Sikarugir-App/Sikarugir)；
-- 个人 Steam 账户中已购买的 [《活侠传》](https://store.steampowered.com/app/1859910/Legend_of_Mortal/)；
-- 足够的磁盘空间（用于存放包装器、Steam、游戏本体与各阶段备份）。
+- Apple Silicon Mac 与 macOS 14 或更高版本
+- Rosetta 2
+- [Sikarugir 官方项目](https://github.com/Sikarugir-App/Sikarugir)
+- Steam 账户中已购买的 [《活侠传》](https://store.steampowered.com/app/1859910/Legend_of_Mortal/)
+- 足够的磁盘空间（用于存放包装器、Steam、游戏本体及各阶段备份）
 
 使用 Sikarugir Creator 创建独立包装器（例如 `SteamWin.app`）。在包装器专属的 Wine prefix 中依次完成以下操作：
 
@@ -41,27 +41,27 @@ Wine、Steam、macOS 与游戏本身的更新均可能影响兼容性与运行�
 5. 将启动目标设为 `C:\Program Files (x86)\Steam\steam.exe`；
 6. 登录 Steam 并下载安装 AppID `1859910`。
 
-macOS 原生 Steam 与 Windows 版 Steam 可以共存。如遇登录或网络连接异常，请先彻底退出另一端的客户端，避免同一账号的会话发生冲突或被强制下线。
+macOS 原生 Steam 与 Windows 版 Steam 可以共存。如遇登录或网络连接异常，请先彻底退出另一端的客户端，避免同一账号的会话冲突或被强制下线。
 
 ### 先确认游戏架构
 
-Steam 商店页面的系统要求无法替代实际的文件架构检查。请运行以下命令：
+Steam 商店页面的系统要求不能代替实际的文件架构检查。请运行以下命令：
 
 ```bash
 file "/path/to/LegendOfMortal/Mortal.exe"
 ```
 
-实测构建版本（Build）的检查结果：
+实测输出：
 
 ```text
 PE32 executable (GUI) Intel 80386, for MS Windows
 ```
 
-Windows 版 Steam 虽然本身常见 32 位引导程序，但图形后端的选择必须以游戏主程序 `Mortal.exe` 本身的 PE32（32 位）架构为准。
+尽管 Windows 版 Steam 客户端包含 32 位组件，但图形后端的选取必须以游戏主程序 `Mortal.exe` 本身的 PE32（32 位）架构为准。
 
 ## 2. 修复 D3D11 图形初始化失败
 
-典型症状：Steam 短暂显示“运行中”后游戏异常退出；弹出错误窗口或在 `Player.log` 中记录：
+典型症状：Steam 短暂显示“运行中”后游戏异常退出，或弹出错误窗口，`Player.log` 中记录：
 
 ```text
 Failed to initialize graphics.
@@ -69,24 +69,24 @@ InitializeEngineGraphics failed
 d3d11: failed to create device and context (80004005)
 ```
 
-在已验证环境中测试各类图形渲染后端的结果如下：
+实测各图形渲染后端表现如下：
 
-- Unity OpenGL：游戏本身缺少对应的图形设备（Graphics Device）支持；
-- WineD3D + MoltenVK：虽能识别 Apple GPU，但在 Direct3D 功能级别（Feature Level）协商阶段失败；
-- D3DMetal：主要覆盖 64 位的 D3D11/D3D12，无法直接用于 32 位游戏；
-- DXMT：提供完整的 32 位 D3D10/11 模块，适配当前 32 位（PE32）游戏。
+- Unity OpenGL：游戏本身缺少对应的图形设备（Graphics Device）支持
+- WineD3D + MoltenVK：虽能识别 Apple GPU，但在 Direct3D 功能级别（Feature Level）协商阶段失败
+- D3DMetal：主要支持 64 位的 D3D11/D3D12，无法直接用于 32 位游戏
+- DXMT：提供完整的 32 位 D3D10/11 模块，适配当前 32 位（PE32）游戏
 
 ### 判断 DXMT 开关是否真正生效
 
-在包装器界面中开启 DXMT 仅代表配置已写入。运行时还需进一步核验：
+在包装器界面中开启 DXMT 仅代表配置已写入，运行时仍需进一步核验：
 
-- `WINEDEBUG=+loaddll` 日志中是否确实加载了目标 `d3d11.dll`、`dxgi.dll` 与 `winemetal.dll`；
-- 当前生效的 Engine DLL 的 SHA-256 哈希值是否与目标 DXMT 版本一致；
-- `Player.log` 是否报告了 Direct3D 11 level 11.1 与 Apple GPU。
+- `WINEDEBUG=+loaddll` 日志中是否确实加载了目标 `d3d11.dll`、`dxgi.dll` 与 `winemetal.dll`
+- 当前生效的 Engine DLL 的 SHA-256 哈希值是否与目标 DXMT 版本一致
+- `Player.log` 是否报告了 Direct3D 11 level 11.1 与 Apple GPU
 
 在实测环境中，初次在界面开启 DXMT 时，游戏实际仍加载了 Engine 目录中的 WineD3D。最终采用可安全回滚的 Engine 层修复方案：先备份原始 32 位 WineD3D 模块，再将对应版本的 DXMT 模块（`d3d10core.dll`、`d3d11.dll`、`dxgi.dll`、`winemetal.dll`）放入实际生效的 `i386-windows` 目录，并将匹配的 `winemetal.so` 放入对应的 Unix 模块目录。
 
-不同 Engine 的目录结构可能存在差异。请先从加载日志中解析出真实的搜索路径后再进行替换，且每个文件在替换前后均应记录 SHA-256 哈希值。
+不同 Engine 的目录结构可能不同。请先从加载日志中确认实际的搜索路径再行替换，并在替换前后记录各文件的 SHA-256 哈希值。
 
 成功加载日志示例：
 
@@ -119,9 +119,9 @@ Wine Retina 模式对应的注册表路径：
 HKCU\Software\Wine\Mac Driver\RetinaMode = "Y"
 ```
 
-Retina 渲染与 Unity UI 缩放是相互独立的机制。《活侠传》的 Unity UI 逻辑基本忽略 Windows DPI 设置。高分辨率能提供更清晰细腻的画面，但 UI 相对偏小；较低分辨率下 UI 尺寸较大，但会有明显的拉伸模糊。
+Retina 渲染与 Unity UI 缩放彼此独立。《活侠传》的 Unity UI 逻辑基本不响应 Windows DPI 设置。高分辨率下画面更细腻，但 UI 偏小；较低分辨率下 UI 尺寸较大，但拉伸模糊较明显。
 
-建议让游戏记住用户自行选择的窗口分辨率。已验证环境最终采用 `1920×1200`，并在桌面快捷方式的启动参数中移除了强制的 `-screen-width` 与 `-screen-height` 参数。
+建议让游戏记住用户自行设定的窗口分辨率。实测采用 `1920×1200`，并在桌面快捷方式中移除了强制的 `-screen-width` 与 `-screen-height` 启动参数。
 
 ## 4. 修复商店价格与总额显示空白
 
@@ -144,10 +144,10 @@ fonts → allfonts
 
 操作前请彻底退出 Windows 版 Steam，并备份以下文件：
 
-- `drive_c/windows/Fonts`；
-- `system.reg`；
-- `user.reg`；
-- `userdef.reg`。
+- `drive_c/windows/Fonts`
+- `system.reg`
+- `user.reg`
+- `userdef.reg`
 
 安装完成后，字体目录从 2 个文件增加到 121 个（约 284 MB），Arial、Tahoma、Calibri、Meiryo 与 WenQuanYi 等字体的注册表项均已完整写入。结束 wineserver 进程并重启游戏后，商店金额即可恢复正常显示。
 
@@ -155,7 +155,7 @@ fonts → allfonts
 
 ## 5. 修复 Doorstop 与 BepInEx Mod 加载
 
-详细排障过程请参见案例分析：[案例：Wine 10 / x86 版《活侠传》加载日文 Mod](cases/japanese-mod.zhs.md)。
+详细排查过程请参见案例分析：[案例：Wine 10 / x86 版《活侠传》加载日文 Mod](cases/japanese-mod.zhs.md)。
 
 ### 安装 Mod 前先做文件级备份
 
@@ -225,21 +225,21 @@ Chainloader initialized
 
 随后应能看到各插件依次加载的记录。在已验证环境中，DiceMaster 与日文 Mod 的 5 个插件均已由 Chainloader 成功加载。DiceMaster 模组在 Wine 下同样受制于缺少 `winhttp` override、corlibs 裁剪与 BepInEx 初始化异常，通过本节的 Doorstop / corlibs / BepInEx Wine 修复路径同样可以完全修复。
 
-## 6. 日常运维建议
+## 6. 日常使用建议
 
-- 建议关闭 Steam 全局游戏内嵌界面（Overlay）与《活侠传》的单独游戏内嵌界面，降低切换 App 窗口后的按键输入锁死概率。
+- 建议关闭 Steam 全局及《活侠传》单独的游戏内嵌界面（Overlay），以降低切换应用窗口时按键锁死的概率。
 - 游玩期间建议配合 `caffeinate` 防止系统休眠。若发生合盖休眠、锁屏或外接显示器热插拔，建议彻底重启游戏、Windows 版 Steam 与 wineserver 会话。
 - Windows 版 Steam 长时间在后台挂起后，可能不再响应 `-applaunch` 启动指令。若 Steam `gameprocess_log.txt` 中无新增记录，请重启该 prefix 下的 Steam 与 Wine 会话。
 - 退出游戏与 Steam 时，请使用 Windows 版 Steam 菜单中的 `Steam → Exit` 正常退出。macOS 程序坞（Dock）中的 Wine 图标仅为窗口代理。
 
-## 7. 使用随仓库提供的只读检查脚本
+## 7. 运行只读检查脚本
 
 ```bash
 skills/run-legend-of-mortal-on-mac/scripts/inspect-lom-wrapper.sh \
   "/path/to/SteamWin.app"
 ```
 
-该脚本仅以只读方式检查包装器配置、游戏架构、Steam 清单文件（manifest）、注册表设置、字体数量、DXMT 模块哈希值、BepInEx 日志以及当前运行的进程。它绝不会主动启动或结束 Wine、Steam 与游戏进程，亦不会修改任何文件。
+该脚本仅以只读方式检查包装器配置、游戏架构、Steam 清单（manifest）、注册表设置、字体数量、DXMT 模块哈希值、BepInEx 日志以及当前运行的进程；不会主动启动或终止 Wine、Steam 及游戏进程，亦不会修改任何文件。
 
 ## 参考资料
 
