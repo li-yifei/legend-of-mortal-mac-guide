@@ -6,7 +6,7 @@ permalink: /docs/guide.ja/
 
 [ホーム](../README.md) · [繁體中文](guide.zht.md) · [简体中文](guide.zhs.md) · [한국어](guide.ko.md)
 
-本書は、2026年8月に実機で動作確認を行った構成手順です。Sikarugir、Wine、およびWindows版Steam環境を利用し、購入済みの正規版『活俠傳』（Legend of Mortal）をApple Silicon Mac上でプレイするためのセットアップ手順を解説します。
+本書は、2026年8月に実機で動作確認を行った検証済みの構成手順です。Sikarugir、Wine、およびWindows版Steam環境を利用し、購入済みの正規版『活俠傳』（Legend of Mortal）をApple Silicon Mac上でプレイするためのセットアップ手順を解説します。
 
 ## 検証済み環境
 
@@ -24,7 +24,7 @@ Wine、Steam、macOS、およびゲーム本体のアップデートにより、
 
 ## 1. Windows版Steam用の独立ラッパーを作成する
 
-事前に以下を準備します。
+事前に以下の環境とファイルを用意します。
 
 - Apple Silicon Mac（macOS 14以降）
 - Rosetta 2
@@ -41,7 +41,7 @@ Sikarugir Creatorで独立したラッパー（例：`SteamWin.app`）を作成�
 5. 起動ターゲットを`C:\Program Files (x86)\Steam\steam.exe`に設定する。
 6. Steamにログインし、AppID `1859910`（『活俠傳』）をインストールする。
 
-macOSネイティブ版SteamとWindows版Steamは同一システム上で共存可能です。ログインやネットワーク接続でエラーが発生した場合は、アカウントのセッション競合を防ぐため、他方のSteamクライアントを完全に終了してください。
+macOSネイティブ版SteamとWindows版Steamは同一システム上で共存可能です。ログインやネットワーク接続でエラーが発生した場合は、アカウントのセッション競合を防ぐため、もう一方のSteamクライアントを完全に終了してください。
 
 ### 事前にゲームのアーキテクチャを確認する
 
@@ -57,11 +57,11 @@ file "/path/to/LegendOfMortal/Mortal.exe"
 PE32 executable (GUI) Intel 80386, for MS Windows
 ```
 
-Windows版Steamクライアント自体は32ビットのブートストラップを持つことが多いですが、グラフィックバックエンドの選定には、ゲーム本体（`Mortal.exe`）のPE32（32ビット）アーキテクチャを基準にする必要があります。
+Windows版Steamクライアント自体は32ビットのブートストラップを持つことが多いですが、グラフィックバックエンドの選定にあたっては、ゲーム本体（`Mortal.exe`）のPE32（32ビット）アーキテクチャを基準に判断する必要があります。
 
 ## 2. D3D11グラフィック初期化エラーを修復する
 
-典型的な症状：Steam上で一瞬「プレイ中」と表示された直後にゲームが強制終了し、エラーダイアログまたは`Player.log`に以下が出力される。
+主な症状：Steam上で一瞬「プレイ中」と表示された直後にゲームが強制終了し、エラーダイアログまたは`Player.log`に以下のエラーが出力される。
 
 ```text
 Failed to initialize graphics.
@@ -69,7 +69,7 @@ InitializeEngineGraphics failed
 d3d11: failed to create device and context (80004005)
 ```
 
-各グラフィックバックエンドの検証結果は以下の通りです。
+各グラフィックバックエンドの検証結果は以下のとおりです。
 
 - Unity OpenGL：ゲームビルド側に対象のGraphics Deviceサポートが含まれていない。
 - WineD3D + MoltenVK：Apple GPUは認識されるものの、Direct3D Feature Levelのネゴシエーションに失敗する。
@@ -78,13 +78,13 @@ d3d11: failed to create device and context (80004005)
 
 ### DXMTが実際に適用されているか確認する
 
-ラッパーのUI上でDXMTを有効にしても、設定ファイルに書き込まれただけで実行時に正しく読み込まれていない場合があります。以下の項目を検証してください。
+ラッパーのUI上でDXMTを有効にしても、設定ファイルに書き込まれただけで実行時に正しくロードされていない場合があります。以下の項目を確認してください。
 
 - `WINEDEBUG=+loaddll`の出力ログで、対象の`d3d11.dll`、`dxgi.dll`、`winemetal.dll`が実際にロードされているか。
 - 適用されているEngine側DLLのSHA-256ハッシュ値が、対象DXMTバージョンのものと一致しているか。
 - `Player.log`に`Direct3D 11 level 11.1`および`Apple <GPU>`が記録されているか。
 
-検証環境では、UI上でDXMTを有効化した初回起動時にも、実際にはEngineディレクトリ内のWineD3Dが読み込まれていました。そのため、安全にロールバック可能なEngineレイヤーの置換を行いました。元の32ビットWineD3Dモジュールをバックアップした上で、対応バージョンのDXMTモジュール（`d3d10core.dll`、`d3d11.dll`、`dxgi.dll`、`winemetal.dll`）を実際に参照される`i386-windows`ディレクトリへ配置し、対応する`winemetal.so`をUnixモジュールディレクトリへ配置しました。
+検証環境では、UI上でDXMTを有効化した初回起動時にも、実際にはEngineディレクトリ内のWineD3Dが読み込まれていました。そのため、安全にロールバック可能な方法でEngineレイヤーの手動置換を行いました。元の32ビットWineD3Dモジュールをバックアップした上で、対応バージョンのDXMTモジュール（`d3d10core.dll`、`d3d11.dll`、`dxgi.dll`、`winemetal.dll`）を実際に参照される`i386-windows`ディレクトリへ配置し、対応する`winemetal.so`をUnixモジュールディレクトリへ配置しました。
 
 使用するEngineによってディレクトリ構成が異なる場合があります。DLLロードログから実際の検索パスを特定した上でファイルを配置し、置換前後のSHA-256ハッシュ値を必ず記録してください。
 
@@ -105,13 +105,13 @@ Direct3D:
 Begin MonoManager ReloadAssembly
 ```
 
-日常的な起動には、Steam AppIDを指定する起動オプション（コマンドライン引数）の使用を推奨します。
+通常時のゲーム起動には、Steam AppIDを指定する起動オプション（コマンドライン引数）の利用を推奨します。
 
 ```text
 steam.exe -applaunch 1859910
 ```
 
-## 3. Retinaと解像度
+## 3. Retinaディスプレイと解像度の設定
 
 WineのRetinaモードに対応するレジストリ設定：
 
@@ -121,13 +121,13 @@ HKCU\Software\Wine\Mac Driver\RetinaMode = "Y"
 
 RetinaレンダリングとUnityのUIスケーリングは独立した仕組みです。『活俠傳』のUnity UIロジックはWindowsのDPI設定を参照しません。高解像度設定ではグラフィックが精細になる一方でUIが小さくなり、低解像度設定ではUIが大きく表示されるものの拡大による表示のぼやけが生じます。
 
-ランチャー側で解像度を固定せず、ゲーム内の解像度設定を保持させる構成を推奨します。検証環境では`1920×1200`を選択し、ショートカットの起動引数から固定指定用の`-screen-width`および`-screen-height`を削除しました。
+ランチャー側で解像度を強制固定せず、ゲーム内の解像度設定に委ねる構成を推奨します。検証環境では`1920×1200`を選択し、ショートカットの起動引数から解像度固定用の`-screen-width`および`-screen-height`を削除しました。
 
-## 4. ショップの価格および合計金額が空白になる問題の修復
+## 4. ショップの価格および合計金額が空白になる問題の修正
 
-典型的な症状：ゲーム内の会話テキスト、一般的な数値、銅銭アイコンは正常に表示されるものの、ショップ画面のアイテム単価と合計金額のみが空白となり表示されない。
+主な症状：ゲーム内の会話テキスト、一般的な数値、銅銭アイコンは正常に表示されるものの、ショップ画面のアイテム単価と合計金額のみが空白となり表示されない。
 
-Unityのリソースを解析したところ、`MoneyValue`および`MoneyText` UIコンポーネントには内蔵フォント`SourceHanSerifTC-Bold`が割り当てられており、デフォルトテキストには`50`が含まれ、フォントアトラス（Font Atlas）にも`0`〜`9`の数字グリフが存在していました。原因は、Wine prefix内のフォントセットおよびシステムフォントのマッピングが不足していたことにあります。
+Unityのリソースを解析したところ、`MoneyValue`および`MoneyText` UIコンポーネントには内蔵フォント`SourceHanSerifTC-Bold`が割り当てられており、デフォルトテキストには`50`が含まれ、フォントアトラス（Font Atlas）にも`0`〜`9`の数字グリフが存在していました。この問題の根本原因は、Wine prefix内のフォントセットおよびシステムフォントのマッピングが不足していたことにあります。
 
 作成直後のWine prefixに含まれるフォントファイルは以下の2点のみです。
 
@@ -136,7 +136,7 @@ sourcehansans.ttc
 unifont.ttf
 ```
 
-`cjkfonts`を導入済みであってもカバー範囲が不足するため、Winetricksから以下をインストールして補完します。
+`cjkfonts`を導入していてもフォントのカバー範囲が不足するため、Winetricksから以下をインストールして補完します。
 
 ```text
 fonts → allfonts
@@ -149,11 +149,11 @@ fonts → allfonts
 - `user.reg`
 - `userdef.reg`
 
-インストール完了後、フォントディレクトリ内のファイル数は2個から121個（約284 MB）に増加し、Arial、Tahoma、Calibri、Meiryo、WenQuanYiなどのレジストリエントリが正常に登録されます。wineserverを終了してゲームを再起動すると、ショップの金額が正しく表示されます。
+インストール完了後、フォントディレクトリ内のファイル数は2個から121個（約284 MB）に増加し、Arial、Tahoma、Calibri、Meiryo、WenQuanYiなどのレジストリエントリが正常に登録されます。wineserverを一度終了してゲームを立ち上げ直すと、ショップの金額が正常に表示されるようになります。
 
 各フォントには固有のソフトウェアライセンスが適用されます。フォントは必ずWinetricks経由で正規の配信元から取得・導入し、公開リポジトリや配布用ラッパーにはフォントバイナリを同梱しない（再配布を行わない原則を維持する）運用を徹底してください。
 
-## 5. DoorstopとBepInEx Modの読み込みを修復する
+## 5. DoorstopとBepInEx Mod読み込みの修復
 
 詳細なトラブルシューティングと技術的経緯については、個別ケーススタディ：[ケース：Wine 10 / x86版『活俠傳』で日本語化Modを読み込む](cases/japanese-mod.ja.md)を参照してください。
 
@@ -162,7 +162,7 @@ fonts → allfonts
 各ZIPアーカイブに対して以下の確認・手順を実行します。
 
 1. アーカイブ内のパス構成を確認し、絶対パスや`..`を含むパストラバーサル（Path Traversal）のセキュリティリスクを排除する。
-2. `winhttp.dll`および各プラグインDLLがx86（32ビット）アーキテクチャであることを検証する。
+2. `winhttp.dll`および各プラグインDLLがx86（32ビット）アーキテクチャであることを確認する。
 3. 上書き対象となる既存ファイルのリストを作成する。
 4. 同名の既存ファイルをすべてタイムスタンプ付きのバックアップディレクトリに退避する。
 5. 展開・配置後に各ファイルのSHA-256ハッシュ値を照合する。
@@ -170,7 +170,7 @@ fonts → allfonts
 
 Modパッケージには過去の`LogOutput.log`が残留している場合があります。フレームワークの動作状況は、ログの更新日時、プロセスがロードしたモジュール、およびChainloaderの出力ログから総合的に判断してください。
 
-### ステップ1：Doorstopをロードする
+### ステップ1：Doorstopを有効化する（DLLオーバーライド）
 
 `winecfg → Libraries`を開き、ゲーム本体（`Mortal.exe`）に対する個別設定を追加します。
 
@@ -178,13 +178,13 @@ Modパッケージには過去の`LogOutput.log`が残留している場合が�
 winhttp = native,builtin
 ```
 
-`Mortal.exe`のみに適用されるアプリケーション個別（Application-specific）のDLL override設定を使用します。ゲーム実行時、プロセス内にローカルの`winhttp.dll`とBepInEx Preloaderがロードされていることを確認します。
+`Mortal.exe`のみに適用されるアプリケーション個別（Application-specific）のDLLオーバーライド設定を使用します。ゲーム実行時、プロセス内にローカルの`winhttp.dll`とBepInEx Preloaderがロードされていることを確認します。
 
 ### ステップ2：Unityバージョンに一致する完全なcorlibsを配置する
 
 バイナリ比較の結果、ゲームに同梱されている`Mortal_Data/Managed/mscorlib.dll`のサイズは`3,906,048`バイト（ストリップ版）であるのに対し、Unity `2020.3.49f1`に対応する未ストリップ完全版（unstripped corlib）のサイズは`4,065,792`バイトでした。
 
-正規の手順で取得した、Unityバージョンと完全に一致する完全なcorlibsを以下に配置します。
+正規の手順で取得した、Unityバージョンと厳密に一致する未ストリップ版corlibs一式を以下に配置します。
 
 ```text
 BepInEx/unstripped_corlib/
@@ -223,7 +223,7 @@ Process bitness: 32-bit (x86)
 Chainloader initialized
 ```
 
-その後、各プラグインが順次ロードされます。検証環境では、DiceMasterおよび日本語化Modの計5個のプラグインがChainloaderによってすべて正常に読み込まれました。なお、DiceMaster単体で動作しない場合も阻害要因（`winhttp` overrideの欠如、corlibsのストリップ、BepInExのWine初期化例外）は同一であるため、本節のDoorstop / corlibs / BepInEx Wine修復手順によって完全に修正・動作させることができます。
+その後、各プラグインが順次ロードされます。検証環境では、DiceMasterおよび日本語化Modの計5個のプラグインがChainloaderによってすべて正常に読み込まれました。なお、DiceMaster単体で動作しない場合も阻害要因（`winhttp`オーバーライドの未設定、corlibsのストリップ、BepInExのWine初期化例外）は根本的に同一であるため、本節のDoorstop / corlibs / BepInEx Wine修復手順によって完全に修正・動作させることができます。
 
 ## 6. 日常の運用・メンテナンス
 
