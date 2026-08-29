@@ -1,5 +1,13 @@
 # Runtime operations
 
+## Window focus recovery after app switching
+
+On Steam Build `20337760` / `release_1.0.5000.13` with Sikarugir Wine `10.0`, switching away to another macOS app and returning to the game can leave the visible Unity window unresponsive to keyboard, mouse, or controller input.
+
+Instruct the user to click the macOS title bar of the `Mortal` window once to restore control, then resume game input. The title bar is the dark top strip containing the traffic-light window controls and the `Mortal` window title. In the verified environment, this single click immediately restored input. Disabling both the global Steam Overlay and the per-game Overlay reduces the frequency of this issue.
+
+Evidence: repeated live reproduction plus `docs/assets/window-titlebar-focus-recovery.png`. Confidence in the recovery action: high. Root-cause status: unresolved; the behavior is consistent with focus handoff issues across Wine, Unity, and macOS.
+
 ## Steam Overlay input lock
 
 The verified environment showed Overlay input hooks unloading and reattaching around app switches, followed by frozen input or rendering. Disable the global Steam Overlay and the game's per-title Overlay. Verify the Overlay process remains absent.

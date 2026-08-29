@@ -153,14 +153,34 @@ Chainloader initialized
 
 DiceMaster와 일본어 Mod를 포함한 5개 플러그인의 로드를 확인했습니다.
 
-## 6. 운영 팁
+## 6. 알려진 문제
+
+### 창 전환 후 제목 표시줄 클릭으로 조작 복구
+
+검증된 Build `20337760` 및 Sikarugir Wine `10.0` 환경에서 게임을 다른 macOS 앱으로 전환했다가 《활협전》으로 복귀했을 때, 화면은 정상 표시되지만 키보드·마우스·컨트롤러 입력이 게임 창에 즉시 인식되지 않는 현상이 발생할 수 있습니다.
+
+복구 순서:
+
+1. 《활협전》의 `Mortal` 창으로 다시 전환합니다.
+2. 창 상단의 macOS 제목 표시줄(아래 그림의 빨간색 화살표가 가리키는 어두운 영역)을 한 번 클릭합니다.
+3. 게임 화면으로 돌아가 조작을 계속합니다.
+
+![Mortal 창 제목 표시줄을 클릭해 게임 입력 복구](assets/window-titlebar-focus-recovery.png)
+
+Steam 전역 Overlay와 《활협전》 개별 Overlay를 끄면 발생 빈도를 낮출 수 있습니다. 제목 표시줄 클릭은 현재 검증된 즉시 복구 방법입니다. 근본 원인은 조사 중이며 Wine, Unity, macOS 사이의 창 포커스 전달과 관련된 동작으로 보입니다.
+
+| 게임 버전 | 발생 조건 | 결과 | 증거 | 신뢰도 |
+| --- | --- | --- | --- | --- |
+| Build `20337760` / `release_1.0.5000.13` | 다른 macOS 앱에서 Wine 게임 창으로 복귀 | `Mortal` 제목 표시줄 클릭 후 게임 조작 복구 | 실제 환경 재현 및 스크린샷 | 높음 |
+
+## 7. 운영 팁
 
 - Steam Overlay를 전역 및 게임별 설정에서 끄면 앱 전환 후 입력 잠금 가능성을 줄일 수 있습니다.
 - 플레이 중 `caffeinate`를 사용합니다. 절전, 잠금 해제, 디스플레이 연결 변경 후 게임, Windows용 Steam, wineserver 세션을 새로 시작합니다.
 - 장시간 실행한 Steam이 `-applaunch`를 처리하지 않을 때 `gameprocess_log.txt`를 확인하고 해당 prefix의 Steam/Wine 세션을 갱신합니다.
 - Steam 종료에는 Windows용 Steam 메뉴의 `Steam → Exit`를 사용합니다.
 
-## 7. 읽기 전용 검사기
+## 8. 읽기 전용 검사기
 
 ```bash
 skills/run-legend-of-mortal-on-mac/scripts/inspect-lom-wrapper.sh \
