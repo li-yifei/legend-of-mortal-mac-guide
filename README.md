@@ -8,19 +8,14 @@ Apple Silicon Mac で『活俠傳 / Legend of Mortal』を動かし、フォン�
 
 Apple Silicon Mac에서 《활협전 / Legend of Mortal》을 실행하고 글꼴 및 BepInEx Mod 문제를 해결하기 위한 실기 검증 가이드입니다.
 
-> 版本入口：游戏 1.06（Build `25953419`）请阅读下方升级案例；四语主指南保留 2026-08-29、Build `20337760` 的旧版配置。各组件的位数和版本随游戏构建核对。
+> 版本入口：四语主指南已按游戏 1.06（Build `25953419`，64 位）改写；1.05（Build `20337760`，32 位）配置收在各指南文末。
 
 ## 从这里开始 / Start here
 
-1.06 更新后 Mod 同时失效，请先看[1.06 升级案例](docs/cases/game-1.06.zhs.md)。存档扩展已获玩家确认，DiceMaster 已确认提示显示；新剧情数值和骰点功能仍待验证。
-
-旧版安装与排障可按下面的步骤阅读：
-
-1. **首次安装**：阅读语言指南第 1 节，建立独立包装器、安装 Windows 版 Steam 并下载游戏；
-2. **启动报错**：若出现 `Failed to initialize graphics` 闪退，按第 2 节检查并配置 DXMT；
-3. **商店数字空白**：若商店物品单价与总计不显示，按第 4 节安装完整字体库；
-4. **加载 Mod / 插件**：按第 5 节与案例研究配置 Doorstop、corlibs 与 BepInEx 6；
-5. **切窗口后无响应**：按第 6 节已知问题，单击窗口顶部标题栏即可恢复控制。
+1. **从 1.05 升级后 Mod 全部失效**：读指南的「从 1.05 升级到 1.06」——只需把 `winhttp.dll` 换成 x64 版 Doorstop；
+2. **使用日文 Mod v2.5 / 日本語化 Mod v2.5 を使う方**：按 README 全部覆盖后，Mac 上还要把 `BepInEx/core` 换回 be.785，并在 `doorstop_config.ini` 加入 `BepInEx\unstripped_corlib`。手順：[日本語化 Mod v2.5 を Mac で導入する](docs/cases/japanese-mod-v2.5.ja.md)；
+3. **首次安装**：读指南第 1 节；
+4. **启动报错 / 商店数字空白 / 切窗口后无响应**：按指南的症状速查表找对应章节。
 
 ## Human guides / 语言指南
 
@@ -35,6 +30,10 @@ Apple Silicon Mac에서 《활협전 / Legend of Mortal》을 실행하고 글�
 - [繁體中文](docs/cases/game-1.06.zht.md)
 - [日本語](docs/cases/game-1.06.ja.md)
 - [한국어](docs/cases/game-1.06.ko.md)
+
+## 日文 Mod v2.5（1.06）/ Japanese Mod v2.5
+
+- [日本語：日本語化 Mod v2.5 を Mac で導入する](docs/cases/japanese-mod-v2.5.ja.md)
 
 ## 旧版日文 Mod 案例 / Historical Japanese Mod case
 
@@ -64,7 +63,7 @@ It covers read-only inspection, Sikarugir/Wine triage, DXMT verification, Wine f
 | Wine | Sikarugir `10.0 revision 8` |
 | DXMT | Template-packaged `v0.80-244-g7c8dee1` |
 
-Plugin feature coverage and machine-specific limits are recorded in the 1.06 cases. Static analysis confirms Japanese Mod v2.5 includes an x64 Doorstop entry and an independent update system, while retaining bundled BepInEx `be.692`. Its macOS runtime compatibility requires separate testing with the Wine fixes preserved.
+Plugin feature coverage and machine-specific limits are recorded in the 1.06 cases. Japanese Mod v2.5 was verified on 2026-10-15 in an isolated wrapper clone: its bundled x64 Doorstop `4.3.0` works, but its bundled BepInEx `be.692` fails under Wine with `PlatformHelper.Current`. Restoring the `be.785` core and the `unstripped_corlib` search path loads all 8 plugins without errors.
 
 ## Historical verified stack
 
@@ -92,9 +91,9 @@ This is a versioned field report. A Steam, game, Wine, BepInEx, or macOS update 
 │   ├── guide.ja.md
 │   ├── guide.ko.md
 │   └── cases/
-│       ├── japanese-mod.zhs.md
-│       ├── japanese-mod.ja.md
-│       └── japanese-mod.ko.md
+│       ├── game-1.06.{zhs,zht,ja,ko}.md
+│       ├── japanese-mod-v2.5.ja.md
+│       └── japanese-mod.{zhs,ja,ko}.md
 └── skills/
     └── run-legend-of-mortal-on-mac/
         ├── SKILL.md

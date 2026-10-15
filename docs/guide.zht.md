@@ -2,254 +2,227 @@
 
 [返回首頁](../README.md) · [简体中文](guide.zhs.md) · [日本語](guide.ja.md) · [한국어](guide.ko.md)
 
-> 本文保留 2026-08-29、Build `20337760` 的舊版實測步驟，文中的 32 位元元件選擇對應這套設定。遊戲 1.06（Build `25953419`）的 64 位元入口修復請參閱 [1.06 升級案例](cases/game-1.06.zht.md)。新版功能的驗證範圍在該案例中分別列明。
+> **本文對應遊戲 1.06（Build `25953419`，64 位元）。** 2026 年 10 月 15 日在本機驗證。
+> - 從 1.05 升級上來、Mod 突然全部失效：直接看 [從 1.05 升級到 1.06](#upgrade)。
+> - 還在用 1.05（Build `20337760`，32 位元）：看文末的 [1.05 歷史設定](#legacy)。
 
-本指南面向希望在 Apple Silicon Mac 上遊玩自購正版《活俠傳》的玩家，介紹如何藉助 Sikarugir、Wine 與 Windows 版 Steam 完成安裝，並排查圖形初始化、商店文字缺失與 Mod 無法載入等常見問題。
+本指南適用於在 Apple Silicon Mac 上遊玩自購正版《活俠傳》的玩家：用 Sikarugir、Wine 與 Windows 版 Steam 安裝遊戲，並處理圖形初始化、商店文字缺失、Mod 無法載入等常見問題。
 
 ## 已驗證環境
 
-| 項目 | 已驗證配置 |
+| 項目 | 已驗證設定 |
 | --- | --- |
-| 遊戲 | Steam AppID `1859910`，Build ID `20337760`，`release_1.0.5000.13` |
+| 遊戲 | Steam AppID `1859910`，Build `25953419`，1.06 |
 | Unity | `2020.3.49f1` |
-| 可執行檔 | `Mortal.exe`，PE32 / x86 |
-| 包裝器（Wrapper） | Sikarugir Template `1.0.11` |
-| Wine | Sikarugir Wine `10.0` |
-| 圖形後端 | 32 位元 DXMT，D3D11 → Metal |
-| Mod 框架 | BepInEx `6.0.0-be.785` x86 Mono |
-| 最近驗證日期 | 2026-08-29 |
+| 遊戲程式 | `Mortal.exe`、`UnityPlayer.dll`，PE32+ / x64 |
+| 包裝器執行元件 | Sikarugir Creator `1.0.2`、Template `1.0.22` |
+| Wine | Sikarugir Wine `10.0 revision 8` |
+| 圖形後端 | 範本搭配的 DXMT `v0.80-244-g7c8dee1`，D3D11 → Metal |
+| Mod 入口 | Doorstop `4.4.0` Windows x64（`winhttp.dll`） |
+| Mod 框架 | BepInEx `6.0.0-be.785` Unity.Mono 託管核心 |
+| 驗證日期 | 2026-10-15 |
 
-Wine、Steam、macOS 與遊戲本身的更新均可能影響相容性與執行結果。在進行任何配置調整時，請記錄版本號並建立帶有時間戳記的備份。
+這套環境是在 1.05 時期建好的 Wine prefix 上升級而來，字型、登錄檔與 DLL override 都沿用當時的設定。Wine、Steam、macOS 與遊戲本身的更新都可能影響結果；調整任何設定前，請記錄版本號並做帶時間戳記的備份。
 
 ## 常見症狀速查
 
-各修復章節僅在遇到對應症狀時按需執行。若遊戲執行正常，無需執行額外修復。
+只在遇到對應症狀時執行對應章節。遊戲執行正常就不需要額外修復。
 
-| 遇到症狀或需求 | 對應章節 | 核心操作 |
-| --- | --- | --- |
-| 首次安裝與配置環境 | [1. 建立獨立的 Windows 版 Steam 包裝器](#install) | 建立包裝器、安裝 Windows Steam 與遊戲 |
-| 啟動閃退 / 提示 D3D11 錯誤 | [2. 修復 D3D11 圖形初始化失敗](#graphics) | 啟用 DXMT 圖形轉換（必要時手動替換 Engine DLL） |
-| 畫面模糊拉伸或 UI 過小 | [3. Retina 與解析度設定](#retina) | 依需要開啟 RetinaMode，自選視窗解析度 |
-| 商店介面單價與總計金額空白 | [4. 修復商店價格與總額顯示空白](#fonts) | 備份登錄檔並透過 Winetricks 安裝 allfonts 字型庫 |
-| Mod 或日文補丁未生效 / 報錯 | [5. 修復 Doorstop 與 BepInEx Mod 載入](#mods) | 設定 winhttp 覆寫、補充完整 corlibs、更新 BepInEx 核心 |
-| 切換視窗後鍵盤滑鼠無回應 | [6. 已知問題](#focus) | 按一下視窗頂端深色標題列恢復焦點控制 |
-| 遊戲長期擱置或系統睡眠防崩 | [7. 日常維護建議](#daily) | 關閉 Overlay，使用 caffeinate，規範結束 Steam |
-| 診斷當前環境配置與記錄檔 | [8. 使用隨存放庫提供的唯讀檢查指令碼](#diagnostics) | 執行唯讀檢查指令碼輸出環境報告 |
+| 症狀或需求 | 對應章節 |
+| --- | --- |
+| 首次安裝 | [1. 建立 Windows 版 Steam 包裝器](#install) |
+| 更新到 1.06 後 Mod 同時失效 | [從 1.05 升級到 1.06](#upgrade) |
+| 啟動閃退 / D3D11 錯誤 | [2. 修復 D3D11 圖形初始化失敗](#graphics) |
+| 畫面模糊或 UI 過小 | [3. Retina 與解析度](#retina) |
+| 商店單價與總額空白 | [4. 修復商店價格顯示空白](#fonts) |
+| Mod 未生效 / 報錯 | [5. 安裝與修復 BepInEx Mod](#mods) |
+| 想裝日文 Mod | [6. 日文 Mod v2.5](#jpmod) |
+| 切換視窗後鍵盤滑鼠無回應 | [7. 已知問題](#focus) |
+| 長時間掛機、睡眠喚醒 | [8. 日常維護建議](#daily) |
+| 檢查目前環境 | [9. 唯讀檢查指令碼](#diagnostics) |
 
-## 核心名詞簡釋
+## 核心名詞
 
 | 名詞 | 簡要說明 |
 | --- | --- |
-| 包裝器（Wrapper / App） | macOS 下副檔名為 `.app` 的應用程式套件，封裝了 Wine 執行環境與 Windows 程式。 |
-| Wine | 讓 Windows 程式在 macOS 上使用所需系統功能的相容層。 |
-| Wine prefix | 包裝器內部模擬的 Windows 系統環境（包含虛擬 C 槽檔案架構與登錄檔）。 |
-| Winetricks | 用於向 Wine prefix 自動化安裝 Windows 常用執行階段元件與字型的輔助指令碼工具。 |
-| DXMT | 將 Windows 的 Direct3D 11 圖形渲染指令轉譯為 Apple Metal 指令的轉換層。 |
-| BepInEx | 廣泛用於 Unity 引擎遊戲的 Mod 外掛程式載入與管理框架。 |
-| Doorstop / 引導鏈 | Mod 載入的入口引導工具。Doorstop 截獲啟動並調用 Preloader 準備環境，再由 Chainloader 載入具體 Mod 外掛程式。 |
+| 包裝器（Wrapper） | macOS 上的 `.app` 程式套件，裡面封裝了 Wine 和 Windows 程式。 |
+| Wine / Wine prefix | Wine 讓 Windows 程式能在 macOS 上執行；prefix 是包裝器內部模擬的 Windows 環境（虛擬 C 槽和登錄檔）。 |
+| Winetricks | 往 prefix 裡安裝 Windows 執行階段元件和字型的輔助工具。 |
+| DXMT | 把 Direct3D 11 圖形指令轉譯成 Apple Metal 的轉換層。 |
+| BepInEx | Unity 遊戲常用的 Mod 載入框架。 |
+| Doorstop | Mod 的入口工具。它以 `winhttp.dll` 的身分在遊戲啟動時被載入，再把 BepInEx 帶進遊戲。 |
+| 原生 DLL / 託管 DLL | 原生 DLL（如 `winhttp.dll`）必須和遊戲同為 64 位元；託管 DLL（C# 寫的 BepInEx 與 Mod 外掛）大多不區分位元數。 |
 
 <a id="install"></a>
 
-## 1. 建立獨立的 Windows 版 Steam 包裝器
+## 1. 建立 Windows 版 Steam 包裝器
 
-準備工作：
-- Apple Silicon Mac 與 macOS 14 或更新版本；
-- Rosetta 2 環境；
-- [Sikarugir 官方專案](https://github.com/Sikarugir-App/Sikarugir)；
-- 個人 Steam 帳號中已擁有的 [《活俠傳》](https://store.steampowered.com/app/1859910/Legend_of_Mortal/)；
-- 足夠的磁碟空間（用於存放包裝器、Steam、遊戲本體與各階段備份）。
+準備：
 
-使用 Sikarugir Creator 建立獨立包裝器（例如 `SteamWin.app`）。在包裝器專屬的 Wine prefix 中依序完成以下操作：
+- Apple Silicon Mac，macOS 14 或更新版本，已安裝 Rosetta 2；
+- [Sikarugir](https://github.com/Sikarugir-App/Sikarugir)（Creator 與 Template 選用最新版，本機驗證為 Creator `1.0.2` / Template `1.0.22`）；
+- 個人 Steam 帳號中已購買的[《活俠傳》](https://store.steampowered.com/app/1859910/Legend_of_Mortal/)；
+- 足夠的磁碟空間（包裝器、Steam、遊戲本體約 12 GB，另需備份空間）。
 
-1. 初始化 Wine prefix，確認已同時建立 `Program Files` 與 `Program Files (x86)` 目錄。
-2. 透過 Winetricks 安裝 `cjkfonts`。
-3. 套用登錄檔設定 `hidewineexports=enable`。
-4. 安裝 Windows 版 Steam。
-5. 將啟動目標設定為 `C:\Program Files (x86)\Steam\steam.exe`。
-6. 登入 Steam 並下載安裝 AppID `1859910`。
+用 Sikarugir Creator 建立獨立包裝器（例如 `SteamWin.app`），然後在它自己的 Wine prefix 中依序：
 
-macOS 原生 Steam 與 Windows 版 Steam 可以共存。若遇到登入或網路連線異常，請先徹底結束另一端的用戶端，避免同一帳號的工作階段相互衝突或被強制登出。
+1. 初始化 prefix，確認同時有 `Program Files` 與 `Program Files (x86)`；
+2. 透過 Winetricks 安裝 `cjkfonts`；
+3. 設定登錄檔 `hidewineexports=enable`；
+4. 安裝 Windows 版 Steam，並把啟動目標設為 `C:\Program Files (x86)\Steam\steam.exe`；
+5. 登入 Steam，下載 AppID `1859910`。
 
-### 檢查遊戲主程式架構
+macOS 原生 Steam 和 Windows 版 Steam 可以共存。登入或連線異常時，先徹底結束另一端的用戶端，避免同一帳號的工作階段互相擠掉。
 
-Steam 商店頁面的系統需求無法取代實際的檔案架構檢查。請在 macOS 終端機中執行以下指令（其中 `/path/to/...` 為預留位置，請替換為遊戲在您 Mac 硬碟上的實際安裝路徑）：
+### 確認遊戲是 64 位元
+
+在 macOS 終端機執行（把 `/path/to/LegendOfMortal` 換成實際遊戲資料夾）：
 
 ```bash
 file "/path/to/LegendOfMortal/Mortal.exe"
 ```
 
-已驗證組建（Build）的檢查結果：
+1.06 的結果：
 
 ```text
-PE32 executable (GUI) Intel 80386, for MS Windows
+PE32+ executable (GUI) x86-64, for MS Windows
 ```
 
-檢查結果顯示為 PE32（32 位元 x86 架構）。在這套舊版設定中，原生入口 DLL 和圖形模組須配合 `Mortal.exe` 的 32 位元架構。託管 Mod 外掛程式可能同時支援 32 位元與 64 位元，具體取決於編譯設定、相依元件和 Unity 相容性。後續修復依遇到的症狀執行。
+`PE32+` / `x86-64` 表示 64 位元。後面所有**原生**元件（`winhttp.dll`、DXMT 模組）都要選 64 位元版本。如果顯示的是 `PE32` / `Intel 80386`，代表你仍是 1.05，請看 [1.05 歷史設定](#legacy)。
+
+<a id="upgrade"></a>
+
+## 從 1.05 升級到 1.06
+
+1.06 把 `Mortal.exe` 與 `UnityPlayer.dll` 從 32 位元改成了 64 位元。照舊版指南裝過的 Mod 入口 `winhttp.dll` 仍是 32 位元，64 位元遊戲會略過它，改用 Wine 內建的 `winhttp.dll`，於是 **遊戲能啟動，但所有 Mod 同時失效**。只需要換掉這一個檔案。
+
+> 實際操作只換 `winhttp.dll`。`doorstop_config.ini`、`BepInEx/unstripped_corlib`、`BepInEx/core`（be.785）、DiceMaster、存檔擴充等託管外掛**全部保留**。不要因為遊戲換成 64 位元就整套替換 BepInEx。
+
+1. **存檔並結束**：在遊戲內存檔結束，再從 Windows 版 Steam 選單 `Steam → Exit` 結束。
+2. **備份**：複製遊戲資料夾中的 `winhttp.dll`、`doorstop_config.ini` 和整個 `BepInEx` 資料夾到帶時間戳記的資料夾；另外單獨複製一份存檔（`drive_c/users/<使用者名稱>/AppData/LocalLow/Obb Studio/Mortal`）。
+3. **確認位元數**：
+   ```bash
+   file "/path/to/LegendOfMortal/Mortal.exe"
+   file "/path/to/LegendOfMortal/winhttp.dll"
+   ```
+   若前者是 `PE32+ … x86-64`、後者是 `PE32 … Intel 80386`，就是本問題。
+4. **換入 x64 Doorstop**：從 [UnityDoorstop 4.4.0 發布頁](https://github.com/NeighTools/UnityDoorstop/releases/tag/v4.4.0) 下載 Windows 版，取其中 **x64** 資料夾的 `winhttp.dll`，覆蓋遊戲根目錄的同名檔案。
+5. **確認 DLL override 仍在**：在包裝器的 `winecfg` 中，Applications 分頁選 `Mortal.exe`，Libraries 分頁裡應有 `winhttp = native,builtin`。
+6. **啟動並查看本次記錄檔**：開啟 `BepInEx/LogOutput.log`，先確認修改時間晚於本次啟動（舊記錄檔會造成誤判），再確認包含：
+   ```text
+   Process bitness: 64-bit (x64)
+   Chainloader initialized
+   Chainloader startup complete
+   ```
+7. **在遊戲裡實際確認功能**：記錄檔出現 `Loading [外掛名稱]` 只代表外掛開始載入，功能能不能用要進遊戲檢查。
+
+本機照此步驟修復後，DiceMaster `1.0.0` 與存檔擴充 `1.2.0` 均恢復載入；存檔擴充已確認可用，DiceMaster 的選項收益提示已確認顯示。DiceMaster 的數值準確性、新劇情解析和擲骰控制仍待驗證。
+
+**選用：同時升級執行元件。** 本機在同一天把包裝器從 Template `1.0.11` / Wine `10.0` 升級到 Template `1.0.22` / Wine `10.0 revision 8`。這一步和修 Mod 入口無關，建議分開做、分開備份，方便判斷是哪一步出了問題。Wine `11.0 revision 1` 在本機卡在 `wineboot` 初始化，暫不推薦。
+
+完整排查過程、驗證範圍和還原方法見 [1.06 升級案例](cases/game-1.06.zht.md)。
 
 <a id="graphics"></a>
 
 ## 2. 修復 D3D11 圖形初始化失敗
 
-### 故障症狀與常規啟用
-
-典型症狀：Steam 短暫顯示「執行中」，隨後遊戲異常結束；彈出視窗或在 `Player.log` 中記錄：
+典型症狀：Steam 顯示「執行中」後遊戲很快結束，或 `Player.log` 中出現：
 
 ```text
 Failed to initialize graphics.
-InitializeEngineGraphics failed
 d3d11: failed to create device and context (80004005)
 ```
 
-常規啟用操作：
-1. 開啟包裝器設定介面。
-2. 在圖形設定中開啟 DXMT 開關。
-3. 啟動遊戲驗證是否能正常進入主畫面。
+1. 開啟包裝器設定，在圖形設定中開啟 DXMT；
+2. 啟動遊戲，確認能進入主選單。
 
-### 進階排查：Engine DLL 手動替換回退方案
+若開啟後仍報錯，先用 `WINEDEBUG=+loaddll` 記錄檔確認 DXMT 是否真的被載入。只有確認沒被載入時，才手動替換 Engine 中的模組：
 
-若介面開啟 DXMT 後仍出現初始化錯誤，需透過記錄檔核驗 DXMT 是否真正生效。只有在確認系統未能載入 DXMT 模組時，才執行本 Engine 層級的回退替換方案。
+1. 從記錄檔確認實際生效的 Engine 資料夾；
+2. 備份原有的 64 位元 WineD3D 模組並記錄 SHA-256；
+3. 把對應版本的 DXMT 模組（`d3d10core.dll`、`d3d11.dll`、`dxgi.dll`、`winemetal.dll`）放入 `x86_64-windows` 資料夾；
+4. 把相符的 `winemetal.so` 放入 `x86_64-unix` 資料夾；
+5. 記錄替換後的 SHA-256。
 
-替換步驟：
-1. 查看 `WINEDEBUG=+loaddll` 記錄檔，確認當前生效 Engine 的真實模組目錄。
-2. 備份原有的 32 位元 WineD3D 模組，並記錄原始檔案的 SHA-256 雜湊值。
-3. 將對應版本的 DXMT 模組（`d3d10core.dll`、`d3d11.dll`、`dxgi.dll`、`winemetal.dll`）複製放入實際生效的 `i386-windows` 目錄。
-4. 將相符的 `winemetal.so` 放入對應的 Unix 模組目錄。
-5. 記錄替換後各檔案的 SHA-256 雜湊值，確保版本精確匹配。
-
-<details markdown="1">
-<summary>圖形渲染後端對比與成功載入記錄檔</summary>
-
-在已驗證組建中測試各圖形渲染路徑的表現：
-- Unity OpenGL：遊戲組建缺少對應的圖形裝置（Graphics Device）支援。
-- WineD3D + MoltenVK：雖能識別 Apple GPU，但 Direct3D feature level（特性等級）協商失敗。
-- D3DMetal：主要涵蓋 64 位元的 D3D11/D3D12，無法直接用於 32 位元遊戲。
-- DXMT：提供完整的 32 位元 D3D10/11 模組，適配當前 32 位元（PE32）遊戲。
-
-成功載入記錄檔範例：
-
-```text
-Loaded C:\windows\system32\winemetal.dll
-Loaded C:\windows\system32\DXGI.DLL
-Loaded C:\windows\system32\d3d11.dll
-```
-
-Unity 初始化成功記錄檔範例：
+成功時 `Player.log` 會顯示：
 
 ```text
 Direct3D:
     Version:  Direct3D 11.0 [level 11.1]
     Renderer: Apple <GPU>
-Begin MonoManager ReloadAssembly
 ```
 
-</details>
-
-日常啟動建議使用 Steam AppID 命令列參數：
-
-```text
-steam.exe -applaunch 1859910
-```
+日常啟動建議用 `steam.exe -applaunch 1859910`。
 
 <a id="retina"></a>
 
-## 3. Retina 與解析度設定
+## 3. Retina 與解析度
 
-Wine Retina 模式對應的登錄檔路徑：
+Wine Retina 模式的登錄檔項目：
 
 ```text
 HKCU\Software\Wine\Mac Driver\RetinaMode = "Y"
 ```
 
-Retina 渲染與 Unity UI 縮放是相互獨立的機制。《活俠傳》的 Unity UI 邏輯基本上忽略 Windows DPI 設定。高解析度能提供更清晰細緻的畫面，但 UI 相對偏小；較低解析度下 UI 尺寸較大，但會有拉伸模糊現象。
-
-建議讓遊戲記住使用者自行選擇的視窗解析度。已驗證環境採用 `1920×1200`，並在桌面捷徑的啟動參數中移除了強制的 `-screen-width` 與 `-screen-height` 參數。
+Retina 與遊戲 UI 縮放是兩回事，《活俠傳》的 UI 基本不理會 Windows DPI 設定。解析度越高畫面越清晰、UI 越小；解析度低則 UI 大但會模糊。建議讓遊戲記住自己選的解析度（本機為 `1920×1200`），並從啟動參數中去掉強制的 `-screen-width` / `-screen-height`。
 
 <a id="fonts"></a>
 
-## 4. 修復商店價格與總額顯示空白
+## 4. 修復商店價格顯示空白
 
-### 故障症狀與修復操作
+症狀：中文對話、一般數值和銅錢圖示都正常，只有商店的單價與總額是空白。
 
-典型症狀：遊戲內的中文對話、常規數值與銅錢圖示均能正常顯示，但商店介面中的商品單價與總計金額顯示為空白。
-
-修復操作：
-1. 徹底結束 Windows 版 Steam。
-2. 完整備份以下 4 處檔案與目錄：
-   - `drive_c/windows/Fonts`
-   - `system.reg`
-   - `user.reg`
-   - `userdef.reg`
-3. 開啟 Winetricks，選擇並安裝：
-```text
-fonts → allfonts
-```
-4. 結束並重新啟動當前包裝器，安全重新啟動其專用的 wineserver 工作階段。
-5. 啟動遊戲驗證商店金額是否正常顯示。
+1. 徹底結束 Windows 版 Steam；
+2. 備份 `drive_c/windows/Fonts`、`system.reg`、`user.reg`、`userdef.reg`；
+3. 開啟 Winetricks，安裝 `fonts → allfonts`；
+4. 重新啟動包裝器，啟動遊戲確認商店金額顯示正常。
 
 <details markdown="1">
-<summary>字型缺失原因與測試觀察記錄</summary>
+<summary>原因與測試記錄</summary>
 
-經 Unity 資源檢查確認，`MoneyValue` 與 `MoneyText` UI 元件綁定了內嵌字型 `SourceHanSerifTC-Bold`；其預設文字包含 `50`，字型圖集中也完整包含 `0–9` 數字字元。問題根源在於 Wine prefix 中的字型集合與系統字型對應映射不完整。
+`MoneyValue` / `MoneyText` 元件使用內嵌字型 `SourceHanSerifTC-Bold`，字型圖集也包含 `0–9`，問題出在 prefix 的字型集合與字型對應不完整。初始 prefix 只有 `sourcehansans.ttc` 和 `unifont.ttf`；安裝 `allfonts` 後增至 121 個檔案（約 284 MB），數量因環境而異。
 
-初始建立的 prefix 僅包含：
-
-```text
-sourcehansans.ttc
-unifont.ttf
-```
-
-實測安裝 `allfonts` 後，測試環境的字型目錄由 2 個檔案增加到 121 個（約 284 MB），Arial、Tahoma、Calibri、Meiryo 與 WenQuanYi 等字型的登錄檔項目均已寫入。該檔案數量與容量為實測環境記錄，各環境的實際數量可能有所增減。
-
-各類字型具有各自的軟體授權合約。請透過 Winetricks 從原始來源下載安裝，公開存放庫與預打包包裝器保持零字型散布。
+各字型有各自的授權條款。請透過 Winetricks 從原始來源安裝；本存放庫不散布任何字型。
 
 </details>
 
 <a id="mods"></a>
 
-## 5. 修復 Doorstop 與 BepInEx Mod 載入
+## 5. 安裝與修復 BepInEx Mod
 
-詳細排障過程請參閱案例分析：[案例：Wine 10 / x86 版《活俠傳》載入日文 Mod](cases/japanese-mod.zhs.md)。
+### 載入流程
 
-### Mod 啟動原理與架構要求
+1. **Doorstop**：Wine 載入遊戲資料夾裡的 `winhttp.dll`，由它啟動 BepInEx Preloader；
+2. **Preloader**：載入 Unity 基礎函式庫（corlibs）並準備環境；
+3. **Chainloader**：依序載入 `BepInEx/plugins/` 下的 Mod。
 
-Mod 框架的引導流程分為三個階段：
-1. **Doorstop 介入**：透過偽裝的 `winhttp.dll` 在遊戲啟動時接管入口，載入 Preloader。
-2. **Preloader 準備**：載入 Unity 基礎組件（corlibs）並初始化環境。
-3. **Chainloader 啟動**：鏈式載入器就緒後，依序載入 `BepInEx/plugins/` 目錄下的各 Mod 外掛程式。
+三個環節在 Wine 下各有一個坑，對應下面三步。已經在 1.05 時期裝好、只是升級到 1.06 的玩家，只需看 [從 1.05 升級到 1.06](#upgrade)。
 
-架構匹配規則：作為原生入口的 `winhttp.dll` 必須與歷史驗證組建版本的 32 位元（PE32）可執行檔保持一致；位於外掛程式目錄的託管 DLL（C# 編譯組件）可具備架構中立性，但須符合外掛程式自身針對 Unity 版本的相容要求。
+### 安裝前的檢查
 
-### 安裝 Mod 前的備份與檢查流程
+對每個 Mod 壓縮檔：
 
-對每個 Mod 壓縮檔依序執行以下檢查：
-1. 檢查壓縮檔內路徑，排除絕對路徑與 `..` 路徑遍歷安全風險。
-2. 驗證 `winhttp.dll` 與原生 DLL 是否為 x86（32 位元）架構。
-3. 列出將被覆寫的檔案清單。
-4. 將所有同名檔案複製到帶有時間戳記的備份目錄中。
-5. 解壓縮合併後逐一驗證 SHA-256 雜湊值。
-6. 啟動遊戲並確認 `LogOutput.log` 的修改時間與本次執行完全一致（避免誤讀壓縮檔內殘留的歷史記錄檔）。
+1. 檢查檔內路徑，排除絕對路徑和 `..`；
+2. 用 `file` 確認 `winhttp.dll` 等原生 DLL 是 64 位元（`PE32+`）；
+3. 列出會被覆蓋的檔案，先複製到帶時間戳記的備份資料夾；
+4. 解壓縮後核對 SHA-256；
+5. 啟動後確認 `LogOutput.log` 是本次啟動產生的。
 
-### 第一步：載入 Doorstop
+> 含日文檔名的壓縮檔請用 Finder 或 `ditto -x -k` 解壓縮。macOS 內建的 `unzip` 會在日文檔名處報錯並留下殘缺檔案。
 
-在 `winecfg → Libraries` 中為遊戲主程式新增設定：
+### 第一步：讓 Wine 載入 Doorstop
+
+Wine 預設優先用內建的 `winhttp.dll`。在 `winecfg` 的 Applications 分頁選 `Mortal.exe`，再到 Libraries 分頁新增：
 
 ```text
 winhttp = native,builtin
 ```
 
-優先使用僅作用於 `Mortal.exe` 的應用程式層級 DLL override。執行遊戲時，在處理程序中應能觀察到已載入遊戲目錄下的 `winhttp.dll` 與 BepInEx Preloader。
+遊戲資料夾中的 `winhttp.dll` 必須是 64 位元。本機驗證的是 [UnityDoorstop 4.4.0](https://github.com/NeighTools/UnityDoorstop/releases/tag/v4.4.0) Windows **x64** 版。
 
-### 第二步：提供匹配 Unity 版本的完整 corlibs
+### 第二步：提供完整 corlibs
 
-遊戲自帶的 `Mortal_Data/Managed/mscorlib.dll` 為裁剪版本（大小為 `3,906,048` 位元組）；匹配 Unity `2020.3.49f1` 的完整未裁剪版本（unstripped corlib）大小為 `4,065,792` 位元組。
-
-將循合法途徑取得、版本精準匹配的完整 corlibs 放入：
-
-```text
-BepInEx/unstripped_corlib/
-```
-
-編輯 `doorstop_config.ini`：
+遊戲內建的 `Mortal_Data/Managed/mscorlib.dll` 是裁剪版（`3,906,048` 位元組）；Unity `2020.3.49f1` 的完整版為 `4,065,792` 位元組。把合法取得、版本一致的完整 corlibs 放入 `BepInEx/unstripped_corlib/`，並編輯 `doorstop_config.ini`：
 
 ```ini
 [General]
@@ -260,82 +233,111 @@ target_assembly = BepInEx\core\BepInEx.Unity.Mono.Preloader.dll
 dll_search_path_override = "BepInEx\unstripped_corlib;BepInEx\core"
 ```
 
-corlibs 必須與 Unity 引擎版本完全一致，並遵守 Unity 的軟體授權合約。存放庫與 Mod 發布包保持零 corlibs 發布。
+corlibs 必須與 Unity 版本完全一致，並遵守 Unity 的授權條款；本存放庫不散布 corlibs。1.06 下是否仍為必要尚未單獨驗證，本機驗證的設定保留了它。
 
-### 第三步：使用包含 Wine 修復補丁的 BepInEx 6
+### 第三步：使用包含 Wine 修復的 BepInEx 6
 
-替換前請完整備份 `BepInEx/core` 目錄。將核心檔案替換為包含 PR #1254 修復補丁的 x86 Mono 組建版本 `6.0.0-be.785`。
-
-驗證載入成功的記錄檔特徵：
-
-```text
-BepInEx 6.0.0-be.785
-System platform: Windows 10 (Wine 10.0) 64-bit
-Process bitness: 32-bit (x86)
-Chainloader initialized
-```
-
-記錄檔中出現 `Chainloader initialized` 表明 Mod 框架初始化成功；隨後各外掛程式將輸出各自的載入資訊。在已驗證歷史配置中，DiceMaster 同樣受制於缺少 `winhttp` override、corlibs 裁剪與 BepInEx 初始化異常，透過本節相同的 Doorstop / corlibs / BepInEx Wine 修復路徑能夠成功載入執行（該結論僅適用於已驗證的歷史組建版本組合，不代表支援所有功能與後續版本）。
-
-<details markdown="1">
-<summary>BepInEx 例外詳情與修復補丁來源</summary>
-
-舊版 BepInEx 6 在 Wine 32 位元環境下可能拋出以下例外：
+舊版 BepInEx 6（如 `be.692`）在 Wine 下可能擲出：
 
 ```text
 InvalidOperationException:
 Cannot set the value of PlatformHelper.Current once it has been accessed.
 ```
 
-該問題由 [BepInEx issue #1201](https://github.com/BepInEx/BepInEx/issues/1201) 記錄，並在 [PR #1254](https://github.com/BepInEx/BepInEx/pull/1254) 中修復。
+該問題見 [BepInEx issue #1201](https://github.com/BepInEx/BepInEx/issues/1201)，已在 [PR #1254](https://github.com/BepInEx/BepInEx/pull/1254) 修復。請先備份 `BepInEx/core`，再換成 `6.0.0-be.785` 的 Unity.Mono 核心。
 
-</details>
+本機實際使用的是 be.785 託管核心 + Doorstop 4.4.0 x64 `winhttp.dll`。託管核心不區分位元數，所以 1.05 時期裝的 be.785 在 1.06 下可以繼續使用；全新安裝可以直接用 BepInEx 的 win-x64 套件，但請確認套件內的 `winhttp.dll` 是 64 位元。
+
+成功時記錄檔包含：
+
+```text
+BepInEx 6.0.0-be.785
+Process bitness: 64-bit (x64)
+Chainloader initialized
+```
+
+<a id="jpmod"></a>
+
+## 6. 日文 Mod v2.5
+
+日文 Mod v2.5 已改為針對 64 位元遊戲，並加入了遊戲內更新功能。它的 README 要求「全部覆蓋」，但在 Mac 上整包覆蓋會把 BepInEx 核心換回舊的 `be.692`，`doorstop_config.ini` 也會失去 `unstripped_corlib` 路徑。
+
+**已實測（2026-10-15）：** 依 README 全部覆蓋後，只需兩步：① 把 `BepInEx/core` 換回覆蓋前的 be.785；② 把 `doorstop_config.ini` 改為 `dll_search_path_override = "BepInEx\unstripped_corlib;BepInEx\core"`。之後日文 Mod、DiceMaster 與存檔擴展共 8 個外掛全部載入、無錯誤；v2.5 內附的 64 位元 `winhttp.dll` 可直接使用。只覆蓋不修改時，be.692 會以 `PlatformHelper.Current` 錯誤中止，所有 Mod 失效。
+
+Mac 上的安裝步驟和驗證結果見日文頁面：[日本語化 Mod v2.5 を Mac で導入する](cases/japanese-mod-v2.5.ja.md)。
 
 <a id="focus"></a>
 
-## 6. 已知問題
+## 7. 已知問題：切換視窗後需點一下標題列
 
-### 切換視窗後需按一下標題列恢復控制
+從其他 macOS 應用程式切回《活俠傳》後，畫面正常更新，但鍵盤、滑鼠或手把可能沒有反應。
 
-故障表現：在已驗證的環境中，從遊戲切換至其他 macOS 應用程式再切回《活俠傳》後，遊戲畫面正常更新，但鍵盤、滑鼠或控制器輸入可能無法在遊戲視窗內生效。
+1. 切回 `Mortal` 遊戲視窗；
+2. 點一下視窗頂端的深色標題列（下圖紅色箭頭處）；
+3. 回到遊戲繼續操作。
 
-實測有效的恢復操作：
-1. 切回《活俠傳》的 `Mortal` 遊戲視窗。
-2. 按一下視窗頂端的 macOS 標題列（即下圖紅色箭頭所指的深色區域）一次。
-3. 返回遊戲畫面繼續操作。
+![點一下 Mortal 視窗標題列以恢復遊戲輸入](assets/window-titlebar-focus-recovery.png)
 
-![按一下 Mortal 視窗標題列以恢復遊戲輸入](assets/window-titlebar-focus-recovery.png)
-
-關閉 Steam 全域 Overlay 與《活俠傳》的個別遊戲 Overlay 可降低發生頻率。按一下標題列是目前已驗證的高信心度即時恢復方式。該問題的底層根因仍在排查中，符合 Wine、Unity 與 macOS 之間視窗焦點傳遞異常的表現特徵。
-
-| 遊戲版本 | 觸發條件 | 結果 | 證據 | 信心度 |
-| --- | --- | --- | --- | --- |
-| Build `20337760` / `release_1.0.5000.13` | 從其他 macOS App 切回 Wine 遊戲視窗 | 按一下 `Mortal` 標題列後恢復遊戲控制 | 實機重現與截圖 | 高 |
+關閉 Steam 全域 Overlay 與本遊戲的 Overlay 可以降低發生頻率。這個現象在 1.05 實機重現並確認解決方法；1.06 下尚未專門複測。根本原因仍在排查，符合 Wine、Unity 與 macOS 之間焦點傳遞異常的特徵。
 
 <a id="daily"></a>
 
-## 7. 日常維護建議
+## 8. 日常維護建議
 
-- 關閉 Steam 全域遊戲內嵌介面（Overlay）與《活俠傳》的單一遊戲內嵌介面，降低切換應用程式視窗後的按鍵輸入鎖死機率。
-- 遊玩期間建議搭配 `caffeinate` 防止系統睡眠。若發生闔蓋睡眠、鎖定畫面或外接顯示器熱插拔，建議在儲存遊戲後徹底退出並重新啟動遊戲、Windows 版 Steam 與對應包裝器工作階段。
-- 結束遊戲與 Steam 時，請先在遊戲內存檔退出，再使用 Windows 版 Steam 選單中的 `Steam → Exit` 正常結束。macOS Dock 中的 Wine 圖示僅為視窗代理。
-- 重新啟動 Wine 時，先存檔並退出遊戲，再只重新啟動本遊戲包裝器的工作階段。
-- Windows 版 Steam 長時間在背景擱置後，可能不再回應 `-applaunch` 啟動指令。若 Steam `gameprocess_log.txt` 中無新增記錄，請重新啟動該包裝器下的 Steam 與 Wine 工作階段。
+- 關閉 Steam 全域 Overlay 和本遊戲的 Overlay。
+- 遊玩時可用 `caffeinate` 防止系統睡眠。闔上螢幕睡眠、鎖定畫面或插拔外接顯示器後，建議存檔並重新啟動遊戲、Steam 和包裝器。
+- 結束時先在遊戲內存檔，再用 Windows 版 Steam 的 `Steam → Exit`。Dock 裡的 Wine 圖示只是視窗代理。
+- Windows 版 Steam 長時間掛在背景後可能不再回應 `-applaunch`。若 `gameprocess_log.txt` 沒有新記錄，請重新啟動本包裝器的 Steam 與 Wine 工作階段。
 
 <a id="diagnostics"></a>
 
-## 8. 使用隨存放庫提供的唯讀檢查指令碼
+## 9. 唯讀檢查指令碼
 
 ```bash
 skills/run-legend-of-mortal-on-mac/scripts/inspect-lom-wrapper.sh \
   "/path/to/SteamWin.app"
 ```
 
-該指令碼僅以唯讀方式檢查包裝器設定、遊戲架構、Steam 資訊清單檔案（manifest）、登錄檔設定、字型數量、DXMT 模組雜湊值、BepInEx 記錄檔以及目前正在執行的處理程序（其中 `/path/to/SteamWin.app` 為預留位置，請替換為包裝器的實際路徑）。該指令碼不會啟動或結束 Wine、Steam 與遊戲處理程序，亦不會修改任何系統或遊戲檔案。
+指令碼只讀取包裝器設定、遊戲架構、Steam 清單、登錄檔、字型數量、DXMT 模組雜湊值、BepInEx 記錄檔和目前的處理程序，不會啟動或結束任何處理程序，也不修改檔案。指令碼在[專案存放庫](https://github.com/li-yifei/legend-of-mortal-mac-guide)中。
+
+## 讓 AI 助理協助
+
+不熟悉 Wine 或終端機的讀者，可以把本指南交給 AI 程式設計助理，讓它先唯讀檢查本機環境，再依症狀處理。請遵守：
+
+- Steam 由自己手動登入，不向 AI 提供帳號密碼或權杖；
+- 檔案替換和有風險的指令先由人工確認；
+- 修改 Engine、prefix 或遊戲資料夾前先做帶時間戳記的備份。
+
+<a id="legacy"></a>
+
+## 1.05 歷史設定
+
+<details markdown="1">
+<summary>1.05（Build <code>20337760</code>，32 位元）的驗證環境與差異</summary>
+
+2026-08-29 驗證：
+
+| 項目 | 設定 |
+| --- | --- |
+| 遊戲 | Build `20337760`，`release_1.0.5000.13` |
+| 遊戲程式 | `Mortal.exe`，PE32 / x86 |
+| 包裝器 | Sikarugir Template `1.0.11`，Wine `10.0` |
+| 圖形後端 | 32 位元 DXMT |
+| Mod | Doorstop x86 `winhttp.dll`，BepInEx `6.0.0-be.785` x86 Mono |
+
+與 1.06 的差異：
+
+- `file Mortal.exe` 顯示 `PE32 executable (GUI) Intel 80386`；
+- 原生元件全部選 32 位元：`winhttp.dll` 用 x86 版，手動替換 DXMT 時放入 `i386-windows` / `i386-unix`；
+- D3DMetal 只涵蓋 64 位元，不能用於 1.05；DXMT 提供 32 位元 D3D10/11 模組；
+- 日文 Mod v2.4 與 DiceMaster 的載入過程見 [日文 Mod v2.4 案例](cases/japanese-mod.zhs.md)（簡體中文）。
+
+</details>
 
 ## 參考資料
 
 - [Sikarugir](https://github.com/Sikarugir-App/Sikarugir)
 - [DXMT](https://github.com/3Shain/dxmt)
-- [BepInEx Wine 修復補丁](https://github.com/BepInEx/BepInEx/pull/1254)
+- [UnityDoorstop 4.4.0](https://github.com/NeighTools/UnityDoorstop/releases/tag/v4.4.0)
+- [BepInEx Wine 修復（PR #1254）](https://github.com/BepInEx/BepInEx/pull/1254)
 - [《活俠傳》日文 Mod](https://dlaqe2334.github.io/LOM-JPMOD/)

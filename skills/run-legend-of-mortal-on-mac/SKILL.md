@@ -37,7 +37,7 @@ Record:
 
 Read [references/verified-case.md](references/verified-case.md) when comparing against the known-good stack.
 
-For game 1.06 / Steam Build `25953419`, read [references/game-1.06-upgrade.md](references/game-1.06-upgrade.md) before applying older x86 advice. Inspect `Mortal.exe` and native Doorstop architecture separately; existing managed plugins may support x64. The older Japanese Mod case remains scoped to Build `20337760`.
+For game 1.06 / Steam Build `25953419`, read [references/game-1.06-upgrade.md](references/game-1.06-upgrade.md) before applying older x86 advice. Inspect `Mortal.exe` and native Doorstop architecture separately; existing managed plugins may support x64. For Japanese Mod v2.5 on 1.06, read [references/japanese-mod-v2.5.md](references/japanese-mod-v2.5.md): its bundled be.692 core must be replaced with be.785 on Wine. The older Japanese Mod case remains scoped to Build `20337760`.
 
 ## Route by the first failing layer
 

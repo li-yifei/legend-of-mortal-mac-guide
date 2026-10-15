@@ -40,13 +40,11 @@ Current module inspection showed game-local x64 `winhttp.dll`, BepInEx Unity Mon
 
 The user confirmed the save extension working. A subsequent user-provided screenshot showed DiceMaster's option-benefit information. Confidence in the extension's reported working state and the visible hint display: high. Hint accuracy, new-story script parsing, dice control and special settlements remain unverified: compare before/after gameplay values and actual branches in controlled events. The current menu binding is `F10` (`Fn + F10` on the internal keyboard where applicable); menu interaction itself remains unverified. Do not reproduce the screenshot's story text in public documentation.
 
-Japanese Mod, Steam WebView IME composition, post-upgrade font appearance, window focus, sleep/wake, and long-session behavior require separate validation. Historical focus and font cases remain useful symptom-based references, not new-build acceptance evidence.
+Steam WebView IME composition, post-upgrade font appearance, window focus, sleep/wake, and long-session behavior require separate validation. Historical focus and font cases remain useful symptom-based references, not new-build acceptance evidence.
 
 ## Japanese Mod v2.5 package boundary
 
-Static inspection on 2026-10-15 of user-supplied ZIP SHA-256 `16a6de80b5896d1eba27c9e6e4654df1ba085e342cd17ccab375d86e9b1bdf35` found an AMD64 PE32+ `winhttp.dll` with Doorstop marker `4.3.0` and bundled BepInEx `be.692`. Core, Mono.Preloader and MonoMod.Utils match the old pre-repair v2.4 baseline by SHA-256. A whole-package overlay would replace the working `be.785` core. Keep the package's static evidence separate from the independently tested Doorstop `4.4.0` setup above.
-
-The package uses updater outer `0.1.18`, runtime `2.5.49`, translation `2026.10.15.354`, selected-version caches and preloader-time LegacyCleanup projection. Preserve that hierarchy when assessing installation; copying only a cached plugin subtree omits its selection/projection flow. Managed plugin identities inspected were IL-only AnyCPU. Translation and layout changes are observed statically; new-story coverage, updater runtime behavior and macOS compatibility remain unverified. Diagnose each stage through a fresh log before promoting a compatibility claim.
+Static inspection found an x64 Doorstop `4.3.0` entry and bundled BepInEx `be.692`; a whole-package overlay replaces the working `be.785` core. The isolated runtime test, verified procedure and triage are in [japanese-mod-v2.5.md](japanese-mod-v2.5.md).
 
 ## Wine 11 observation
 
