@@ -1,259 +1,240 @@
 ---
 layout: page
-title: Apple Silicon Mac에서 《활협전》 실행하기: 설치·글꼴·Mod 복구
+title: "Apple Silicon Mac에서 《활협전》 실행하기: 설치·글꼴·Mod 복구"
 permalink: /docs/guide.ko/
+redirect_from:
+  - /docs/guide.ko.html
 ---
 
-[Home](../README.md) · [繁體中文](guide.zht.md) · [简体中文](guide.zhs.md) · [日本語](guide.ja.md)
+[홈](../README.md) · [简体中文](guide.zhs.md) · [繁體中文](guide.zht.md) · [日本語](guide.ja.md)
 
-> 이 문서는 2026-08-29, Build `20337760`에서 검증한 구버전 절차이며 32비트 구성 요소 선택은 해당 환경을 기준으로 합니다. 게임 1.06(Build `25953419`)의 64비트 진입점 복구는 [1.06 업데이트 사례](cases/game-1.06.ko.md)를 참고하십시오. 각 기능의 검증 범위도 해당 문서에 구분해 두었습니다.
+> **이 문서는 게임 1.06(Build `25953419`, 64비트)을 기준으로 합니다.** 2026년 10월 15일에 직접 사용하는 환경에서 검증했습니다.
+> - 1.05에서 업데이트한 뒤 Mod가 한꺼번에 작동하지 않는 경우: [1.05에서 1.06으로 업그레이드](#upgrade)를 바로 보십시오.
+> - 아직 1.05(Build `20337760`, 32비트)를 사용하는 경우: 문서 끝의 [1.05 이전 구성](#legacy)을 보십시오.
+{: .callout}
 
-이 문서는 Apple Silicon Mac에서 직접 구매한 정품 《활협전 / Legend of Mortal》을 플레이하려는 사용자를 위해, Sikarugir, Wine, Windows용 Steam을 통한 설치 절차와 그래픽 초기화 실패, 상점 텍스트 공백, Mod 로드 오류 등 주요 문제의 해결 방법을 안내하는 실기 검증 가이드입니다.
+이 문서는 Apple Silicon Mac에서 직접 구매한 정품 《활협전》을 플레이하려는 분을 위한 안내서입니다. Sikarugir, Wine, Windows용 Steam으로 게임을 설치하고, 그래픽 초기화 실패, 상점 문자 누락, Mod 로드 실패 같은 흔한 문제를 해결하는 방법을 다룹니다.
 
-## 검증 환경
+* 목차
+{:toc}
+
+## 검증된 환경
 
 | 항목 | 검증된 구성 |
 | --- | --- |
-| 게임 | Steam AppID `1859910`, Build ID `20337760`, `release_1.0.5000.13` |
+| 게임 | Steam AppID `1859910`, Build `25953419`, 1.06 |
 | Unity | `2020.3.49f1` |
-| 실행 파일 | `Mortal.exe`, PE32 / x86 |
-| 래퍼(Wrapper) | Sikarugir Template `1.0.11` |
-| Wine | Sikarugir Wine `10.0` |
-| 그래픽 백엔드 | 32-bit DXMT, D3D11 → Metal |
-| Mod 프레임워크 | BepInEx `6.0.0-be.785` x86 Mono |
-| 최종 검증일 | 2026-08-29 |
+| 실행 파일 | `Mortal.exe`, `UnityPlayer.dll`, PE32+ / x64 |
+| 래퍼 런타임 | Sikarugir Creator `1.0.2`, Template `1.0.22` |
+| Wine | Sikarugir Wine `10.0 revision 8` |
+| 그래픽 백엔드 | 템플릿에 포함된 DXMT `v0.80-244-g7c8dee1`, D3D11 → Metal |
+| Mod 진입점 | Doorstop `4.4.0` Windows x64 (`winhttp.dll`) |
+| Mod 프레임워크 | BepInEx `6.0.0-be.785` Unity.Mono 매니지드 코어 |
+| 검증일 | 2026-10-15 |
 
-Wine, Steam, macOS 및 게임 업데이트에 따라 호환성 및 실행 결과가 달라질 수 있습니다. 설정을 변경할 때는 버전 번호를 기록하고 타임스탬프가 포함된 백업을 생성하십시오.
+이 환경은 1.05 시절에 만든 Wine prefix를 그대로 업그레이드한 것이며, 글꼴, 레지스트리, DLL override도 당시 설정을 이어받았습니다. Wine, Steam, macOS, 게임 자체의 업데이트에 따라 결과가 달라질 수 있습니다. 설정을 바꾸기 전에 버전 번호를 기록하고 타임스탬프가 붙은 백업을 만들어 두십시오.
 
 ## 증상별 빠른 해결 색인
 
-각 복구 섹션은 해당 증상이 발생했을 때만 선택적으로 수행하십시오. 게임이 정상 실행된다면 추가 작업은 필요하지 않습니다.
+해당 증상이 나타날 때만 그 항목을 수행하십시오. 게임이 정상적으로 실행된다면 추가 작업은 필요하지 않습니다.
 
-| 증상 또는 목적 | 해당 섹션 | 핵심 조치 |
-| --- | --- | --- |
-| 초기 설치 및 환경 구성 | [1. 독립된 Windows용 Steam Wrapper 만들기](#install) | 래퍼 생성, Windows용 Steam 및 게임 설치 |
-| 실행 즉시 종료 / D3D11 오류 | [2. D3D11 초기화 실패 복구](#graphics) | DXMT 활성화(필요 시 Engine DLL 수동 교체) |
-| 화면 흐림 / UI 크기 부적합 | [3. Retina와 해상도](#retina) | 필요에 따라 RetinaMode를 켜고 보기 편한 창 해상도 선택 |
-| 상점 단가 및 합계 금액 빈칸 | [4. 상점 가격과 합계가 사라지는 문제](#fonts) | 레지스트리 백업 및 Winetricks allfonts 설치 |
-| Mod / 패치 미적용 및 로드 실패 | [5. Doorstop/BepInEx Mod 복구](#mods) | winhttp 설정, 완전한 corlibs 배치, BepInEx 6 교체 |
-| 창 전환 후 키보드·마우스 무반응 | [6. 알려진 문제](#focus) | 창 상단 제목 표시줄을 클릭하여 입력 제어 복귀 |
-| 장시간 방치 및 절전 시 충돌 방지 | [7. 운영 팁](#daily) | 오버레이 비활성화, caffeinate 사용, Steam 정상 종료 |
-| 현재 환경 구성 및 로그 진단 | [8. 읽기 전용 검사기](#diagnostics) | 읽기 전용 검사 스크립트로 상태 리포트 출력 |
-
-## 핵심 용어 안내
-
-| 용어 | 설명 |
+| 증상 또는 목적 | 해당 항목 |
 | --- | --- |
-| 래퍼(Wrapper / App) | macOS의 `.app` 번들 형태로, Wine 실행 환경과 Windows 소프트웨어를 하나로 묶은 패키지입니다. |
-| Wine | Windows 프로그램이 필요한 시스템 기능을 macOS에서 사용할 수 있게 하는 호환 계층입니다. |
-| Wine prefix | 래퍼 내부에 생성되는 가상 Windows 환경(가상 C 드라이브 및 레지스트리)입니다. |
-| Winetricks | Wine prefix에 필수 런타임이나 Windows 글꼴을 자동으로 설치해 주는 보조 도구입니다. |
-| DXMT | Windows의 Direct3D 11 그래픽 렌더링 명령을 Apple Metal 명령으로 변환하는 그래픽 번역 레이어입니다. |
-| BepInEx | Unity 엔진 게임에서 플러그인(Mod)을 로드하고 관리하는 프레임워크입니다. |
-| Doorstop / 부팅 체인 | Mod 로드의 시작점 도구입니다. Doorstop이 실행 시점에 개입하여 Preloader를 호출하고, 이어 Chainloader가 각 Mod 플러그인을 로드합니다. |
+| 처음 설치 | [1. Windows용 Steam 래퍼 만들기](#install) |
+| 1.06으로 업데이트한 뒤 Mod가 모두 작동하지 않음 | [1.05에서 1.06으로 업그레이드](#upgrade) |
+| 실행 직후 종료 / D3D11 오류 | [2. D3D11 그래픽 초기화 실패 복구](#graphics) |
+| 화면이 흐리거나 UI가 너무 작음 | [3. Retina와 해상도](#retina) |
+| 상점의 단가와 합계가 비어 있음 | [4. 상점 가격 공백 복구](#fonts) |
+| Mod가 적용되지 않거나 오류가 남 | [5. BepInEx Mod 설치와 복구](#mods) |
+| 일본어 Mod를 설치하고 싶음 | [6. 일본어 Mod v2.5](#jpmod) |
+| 창을 전환한 뒤 키보드·마우스가 반응하지 않음 | [7. 알려진 문제](#focus) |
+| 장시간 방치, 절전 후 복귀 | [8. 일상 운영 팁](#daily) |
+| 현재 환경 점검 | [9. 읽기 전용 점검 스크립트](#diagnostics) |
+
+## 핵심 용어
+
+| 용어 | 간단한 설명 |
+| --- | --- |
+| 래퍼(Wrapper) | macOS의 `.app` 번들로, Wine과 Windows 프로그램을 하나로 묶은 것입니다. |
+| Wine / Wine prefix | Wine은 Windows 프로그램을 macOS에서 실행하게 해 줍니다. prefix는 래퍼 내부에 만들어지는 가상 Windows 환경(가상 C 드라이브와 레지스트리)입니다. |
+| Winetricks | prefix에 Windows 런타임과 글꼴을 설치해 주는 보조 도구입니다. |
+| DXMT | Direct3D 11 그래픽 명령을 Apple Metal로 번역하는 변환 레이어입니다. |
+| BepInEx | Unity 게임에서 많이 쓰는 Mod 로딩 프레임워크입니다. |
+| Doorstop | Mod의 진입점 도구입니다. `winhttp.dll`로 위장해 게임이 시작될 때 로드되고, BepInEx를 게임 안으로 불러옵니다. |
+| 네이티브 DLL / 매니지드 DLL | 네이티브 DLL(예: `winhttp.dll`)은 게임과 같은 64비트여야 합니다. 매니지드 DLL(C#으로 만든 BepInEx와 Mod 플러그인)은 대부분 비트 수를 가리지 않습니다. |
 
 <a id="install"></a>
 
-## 1. 독립된 Windows용 Steam Wrapper 만들기
+## 1. Windows용 Steam 래퍼 만들기
 
-사전 준비:
-- Apple Silicon Mac 및 macOS 14 이상;
-- Rosetta 2 환경;
-- [Sikarugir 공식 GitHub](https://github.com/Sikarugir-App/Sikarugir);
-- Steam 계정에서 구매한 [《활협전》](https://store.steampowered.com/app/1859910/Legend_of_Mortal/);
-- 충분한 디스크 여유 공간(래퍼, Steam, 게임 본체, 백업 보관용).
+준비물:
 
-Sikarugir Creator로 독립 래퍼(예: `SteamWin.app`)를 만듭니다. 래퍼 전용 Wine prefix에서 다음 순서로 작업을 완료합니다:
+- Apple Silicon Mac, macOS 14 이상, Rosetta 2 설치;
+- [Sikarugir](https://github.com/Sikarugir-App/Sikarugir) (Creator와 Template은 최신 버전을 사용하십시오. 직접 검증한 버전은 Creator `1.0.2` / Template `1.0.22`입니다);
+- 개인 Steam 계정으로 구매한 [《활협전》](https://store.steampowered.com/app/1859910/Legend_of_Mortal/);
+- 충분한 디스크 여유 공간(래퍼, Steam, 게임 본체에 약 12 GB, 백업 공간은 별도).
 
-1. Wine prefix를 초기화하고 `Program Files`와 `Program Files (x86)` 디렉터리가 모두 생성되었는지 확인합니다.
-2. Winetricks에서 `cjkfonts`를 설치합니다.
+Sikarugir Creator로 독립 래퍼(예: `SteamWin.app`)를 만든 다음, 그 래퍼 전용 Wine prefix에서 다음 순서로 진행합니다.
+
+1. prefix를 초기화하고 `Program Files`와 `Program Files (x86)`가 모두 있는지 확인합니다.
+2. Winetricks로 `cjkfonts`를 설치합니다.
 3. 레지스트리 설정 `hidewineexports=enable`을 적용합니다.
-4. Windows용 Steam을 설치합니다.
-5. 실행 대상을 `C:\Program Files (x86)\Steam\steam.exe`로 설정합니다.
-6. Steam에 로그인하고 AppID `1859910`을 다운로드 및 설치합니다.
+4. Windows용 Steam을 설치하고 실행 대상을 `C:\Program Files (x86)\Steam\steam.exe`로 지정합니다.
+5. Steam에 로그인하고 AppID `1859910`을 다운로드합니다.
 
-macOS 네이티브 Steam과 Windows용 Steam은 공존할 수 있습니다. 로그인이나 네트워크 통신에 문제가 생길 경우, 동일 계정 세션 충돌을 방지하기 위해 다른 한쪽 클라이언트를 완전히 종료하십시오.
+macOS용 Steam과 Windows용 Steam은 함께 둘 수 있습니다. 로그인이나 네트워크에 문제가 생기면 같은 계정의 세션이 서로 밀어내지 않도록 다른 쪽 클라이언트를 완전히 종료하십시오.
 
-### 게임 실행 파일 아키텍처 확인
+### 게임이 64비트인지 확인
 
-Steam 상점 페이지의 시스템 요구 사항 표시는 실제 바이너리 구조 확인을 대체하지 못합니다. macOS 터미널에서 다음 명령을 실행합니다(명령의 `/path/to/...`는 실제 게임 설치 경로로 변경하는 플레이스홀더입니다):
+macOS 터미널에서 실행합니다(`/path/to/LegendOfMortal`은 실제 게임 폴더로 바꾸십시오).
 
 ```bash
 file "/path/to/LegendOfMortal/Mortal.exe"
 ```
 
-실제 검증된 빌드(Build)의 확인 결과:
+1.06의 결과:
 
 ```text
-PE32 executable (GUI) Intel 80386, for MS Windows
+PE32+ executable (GUI) x86-64, for MS Windows
 ```
 
-확인 결과는 PE32(32비트 x86)입니다. 이 구버전 구성에서는 네이티브 진입 DLL과 그래픽 모듈을 `Mortal.exe`의 32비트 구조에 맞춥니다. 관리형 Mod 플러그인은 빌드 설정, 종속 항목, Unity 호환성에 따라 32비트와 64비트를 함께 지원할 수 있습니다. 이후 복구는 해당 증상에 맞는 절차를 선택합니다.
+`PE32+` / `x86-64`는 64비트라는 뜻입니다. 이후의 모든 **네이티브** 구성 요소(`winhttp.dll`, DXMT 모듈)는 64비트 버전을 선택해야 합니다. `PE32` / `Intel 80386`이 표시된다면 아직 1.05이므로 [1.05 이전 구성](#legacy)을 보십시오.
+
+<a id="upgrade"></a>
+
+## 1.05에서 1.06으로 업그레이드
+
+1.06에서 `Mortal.exe`와 `UnityPlayer.dll`이 32비트에서 64비트로 바뀌었습니다. 예전 가이드대로 설치한 Mod 진입점 `winhttp.dll`은 여전히 32비트이므로 64비트 게임이 이를 건너뛰고 Wine 내장 `winhttp.dll`을 사용하게 됩니다. 그 결과 **게임은 실행되지만 모든 Mod가 한꺼번에 작동하지 않습니다.** 이 파일 하나만 교체하면 됩니다.
+
+> 실제로 교체하는 것은 `winhttp.dll`뿐입니다. `doorstop_config.ini`, `BepInEx/unstripped_corlib`, `BepInEx/core`(be.785), DiceMaster, 세이브 확장 같은 매니지드 플러그인은 **모두 그대로 둡니다.** 게임이 64비트가 되었다고 BepInEx를 통째로 교체하지 마십시오.
+{: .callout .warn}
+
+1. **저장하고 종료**: 게임 안에서 저장하고 종료한 뒤, Windows용 Steam 메뉴의 `Steam → Exit`로 Steam도 종료합니다.
+2. **백업**: 게임 폴더의 `winhttp.dll`, `doorstop_config.ini`, `BepInEx` 폴더 전체를 타임스탬프가 붙은 폴더에 복사합니다. 세이브 데이터(`drive_c/users/<사용자명>/AppData/LocalLow/Obb Studio/Mortal`)도 따로 복사해 둡니다.
+3. **비트 수 확인**:
+   ```bash
+   file "/path/to/LegendOfMortal/Mortal.exe"
+   file "/path/to/LegendOfMortal/winhttp.dll"
+   ```
+   앞의 결과가 `PE32+ … x86-64`이고 뒤의 결과가 `PE32 … Intel 80386`이라면 바로 이 문제입니다.
+4. **x64 Doorstop으로 교체**: [UnityDoorstop 4.4.0 릴리스 페이지](https://github.com/NeighTools/UnityDoorstop/releases/tag/v4.4.0)에서 Windows용을 내려받아, 그 안의 **x64** 폴더에 있는 `winhttp.dll`로 게임 루트 폴더의 같은 이름 파일을 덮어씁니다.
+5. **DLL override가 남아 있는지 확인**: 래퍼의 `winecfg`에서 Applications 탭의 `Mortal.exe`를 선택하고, Libraries 탭에 `winhttp = native,builtin`이 있어야 합니다.
+6. **실행하고 이번 로그 확인**: `BepInEx/LogOutput.log`를 열어, 수정 시각이 이번 실행 이후인지 먼저 확인하고(오래된 로그는 오판의 원인이 됩니다) 다음 내용이 있는지 봅니다.
+   ```text
+   Process bitness: 64-bit (x64)
+   Chainloader initialized
+   Chainloader startup complete
+   ```
+7. **게임에서 실제 기능 확인**: 로그에 `Loading [플러그인 이름]`이 나타나는 것은 플러그인이 로드되기 시작했다는 뜻일 뿐입니다. 기능이 실제로 작동하는지는 게임에 들어가 확인하십시오.
+
+직접 사용하는 환경에서 이 절차로 복구한 뒤 DiceMaster `1.0.0`과 세이브 확장 `1.2.0`이 모두 다시 로드되었습니다. 세이브 확장은 작동을 확인했고, DiceMaster는 선택지 이익 표시가 나타나는 것까지 확인했습니다. DiceMaster의 수치 정확성, 새 스토리 분석, 주사위 제어는 아직 검증하지 않았습니다.
+
+**선택 사항: 런타임 구성 요소도 함께 업그레이드.** 같은 날 래퍼를 Template `1.0.11` / Wine `10.0`에서 Template `1.0.22` / Wine `10.0 revision 8`로 올렸습니다. 이 작업은 Mod 진입점 복구와는 관계가 없으므로, 어느 단계에서 문제가 생겼는지 알 수 있도록 따로 진행하고 따로 백업하는 것을 권장합니다. Wine `11.0 revision 1`은 직접 사용하는 환경에서 `wineboot` 초기화 중에 멈췄으므로 현재로서는 권장하지 않습니다.
+
+전체 점검 과정, 검증 범위, 되돌리는 방법은 [1.06 업데이트 사례](cases/game-1.06.ko.md)를 참고하십시오.
 
 <a id="graphics"></a>
 
-## 2. D3D11 초기화 실패 복구
+## 2. D3D11 그래픽 초기화 실패 복구
 
-### 증상 및 일반 활성화
-
-대표적인 증상: Steam에서 잠시 '실행 중'으로 표시된 후 게임이 비정상 종료됩니다. 에러 대화상자나 `Player.log`에 다음 로그가 기록됩니다:
+대표적인 증상: Steam에 '실행 중'으로 표시된 뒤 게임이 곧 종료되거나, `Player.log`에 다음 내용이 기록됩니다.
 
 ```text
 Failed to initialize graphics.
-InitializeEngineGraphics failed
 d3d11: failed to create device and context (80004005)
 ```
 
-일반 활성화 조치:
-1. 래퍼 설정 창을 엽니다.
-2. 그래픽 설정에서 DXMT 스위치를 켭니다.
-3. 게임을 실행하여 타이틀 화면이 열리는지 확인합니다.
+1. 래퍼 설정을 열고 그래픽 설정에서 DXMT를 켭니다.
+2. 게임을 실행하여 메인 메뉴까지 들어가는지 확인합니다.
 
-### 고급 점검: Engine DLL 수동 교체 폴백
+켠 뒤에도 오류가 계속되면, 먼저 `WINEDEBUG=+loaddll` 로그로 DXMT가 실제로 로드되는지 확인하십시오. 로드되지 않는 것이 확인된 경우에만 Engine의 모듈을 직접 교체합니다.
 
-UI에서 DXMT를 활성화한 후에도 초기화 오류가 계속된다면 로그를 통해 실제 모듈 로드 여부를 확인해야 합니다. 시스템이 DXMT 모듈을 로드하지 못하고 WineD3D를 불러오는 것이 확인되었을 때만 이 Engine 레이어 교체 폴백을 실행합니다.
+1. 로그에서 실제로 적용되는 Engine 폴더를 확인합니다.
+2. 기존 64비트 WineD3D 모듈을 백업하고 SHA-256을 기록합니다.
+3. 해당 버전의 DXMT 모듈(`d3d10core.dll`, `d3d11.dll`, `dxgi.dll`, `winemetal.dll`)을 `x86_64-windows` 폴더에 넣습니다.
+4. 짝이 맞는 `winemetal.so`를 `x86_64-unix` 폴더에 넣습니다.
+5. 교체한 뒤의 SHA-256을 기록합니다.
 
-교체 순서:
-1. `WINEDEBUG=+loaddll` 로그를 통해 활성 Engine의 실제 검색 디렉터리를 확인합니다.
-2. 기존 32비트 WineD3D 모듈을 백업하고 교체 전 원본 파일의 SHA-256 해시값을 기록합니다.
-3. 대상 버전의 DXMT 모듈(`d3d10core.dll`, `d3d11.dll`, `dxgi.dll`, `winemetal.dll`)을 유효한 `i386-windows` 디렉터리에 복사합니다.
-4. 일치하는 `winemetal.so`를 대응하는 Unix 모듈 디렉터리에 배치합니다.
-5. 교체 후 각 파일의 SHA-256 해시값을 기록하여 버전 일치를 확인합니다.
-
-<details markdown="1">
-<summary>그래픽 렌더러 비교 및 로드 성공 로그</summary>
-
-검증된 빌드에서 테스트한 그래픽 경로 분석:
-- Unity OpenGL: 게임 빌드 자체에 해당 그래픽 장치 지원이 포함되지 않았습니다.
-- WineD3D + MoltenVK: Apple GPU는 인식하지만 Direct3D 기능 수준 협상에 실패했습니다.
-- D3DMetal: 주로 64비트 D3D11/12를 지원하므로 32비트 게임에는 사용할 수 없습니다.
-- DXMT: 완전한 32비트 D3D10/11 모듈을 제공하므로 본 32비트(PE32) 게임에 적합합니다.
-
-모듈 로드 성공 로그 예시:
-
-```text
-Loaded C:\windows\system32\winemetal.dll
-Loaded C:\windows\system32\DXGI.DLL
-Loaded C:\windows\system32\d3d11.dll
-```
-
-Unity 초기화 성공 로그 예시:
+성공하면 `Player.log`에 다음과 같이 표시됩니다.
 
 ```text
 Direct3D:
     Version:  Direct3D 11.0 [level 11.1]
     Renderer: Apple <GPU>
-Begin MonoManager ReloadAssembly
 ```
 
-</details>
-
-평소 실행할 때는 Steam AppID 커맨드라인 매개변수를 사용하는 방식을 권장합니다:
-
-```text
-steam.exe -applaunch 1859910
-```
+평소 실행에는 `steam.exe -applaunch 1859910`을 사용하는 것을 권장합니다.
 
 <a id="retina"></a>
 
 ## 3. Retina와 해상도
 
-Wine Retina Mode 레지스트리 경로:
+Wine Retina 모드의 레지스트리 항목:
 
 ```text
 HKCU\Software\Wine\Mac Driver\RetinaMode = "Y"
 ```
 
-Retina 렌더링과 Unity UI 배율 조정은 별도로 동작합니다. 《활협전》의 Unity UI 로직은 Windows DPI 설정을 기본적으로 무시합니다. 고해상도에서는 정밀한 화면을 얻을 수 있지만 UI가 작아지며, 저해상도에서는 UI가 커지지만 확대에 따른 흐림이 발생합니다.
-
-게임 내부 설정에서 사용자가 선택한 창 해상도를 기억하도록 유지하는 방식을 권장합니다. 검증 환경에서는 `1920×1200`을 사용했으며, 바로가기의 실행 옵션에서 강제 지정 인자 `-screen-width`와 `-screen-height`를 제거했습니다.
+Retina와 게임 UI 배율은 별개이며, 《활협전》의 UI는 Windows DPI 설정을 거의 따르지 않습니다. 해상도가 높을수록 화면은 선명해지고 UI는 작아집니다. 해상도가 낮으면 UI는 커지지만 화면이 흐려집니다. 게임이 직접 고른 해상도를 기억하게 두고(직접 사용하는 환경은 `1920×1200`), 실행 인자에서 강제로 지정한 `-screen-width` / `-screen-height`를 제거하는 것을 권장합니다.
 
 <a id="fonts"></a>
 
-## 4. 상점 가격과 합계가 사라지는 문제
+## 4. 상점 가격 공백 복구
 
-### 증상 및 복구 조치
+증상: 중국어 대화, 일반 숫자, 엽전 아이콘은 모두 정상인데 상점의 단가와 합계만 비어 있습니다.
 
-대표적인 증상: 게임 내 중국어 대화, 일반 숫자, 엽전 아이콘은 정상 출력되지만, 상점 화면의 아이템 단가 및 총 결제 금액만 빈칸으로 출력됩니다.
-
-복구 조치:
 1. Windows용 Steam을 완전히 종료합니다.
-2. 다음 4곳의 파일 및 디렉터리를 백업합니다:
-   - `drive_c/windows/Fonts`
-   - `system.reg`
-   - `user.reg`
-   - `userdef.reg`
-3. Winetricks를 열고 다음 항목을 선택해 설치합니다:
-```text
-fonts → allfonts
-```
-4. 현재 래퍼를 종료한 후 다시 실행하여 전용 wineserver 세션을 안전하게 재시작합니다.
-5. 게임을 실행하여 상점 금액이 정상 표시되는지 확인합니다.
+2. `drive_c/windows/Fonts`, `system.reg`, `user.reg`, `userdef.reg`를 백업합니다.
+3. Winetricks를 열고 `fonts → allfonts`를 설치합니다.
+4. 래퍼를 다시 시작하고 게임을 실행하여 상점 금액이 정상적으로 표시되는지 확인합니다.
 
 <details markdown="1">
-<summary>글꼴 누락 원인과 테스트 관측 기록</summary>
+<summary>원인과 테스트 기록</summary>
 
-Unity 리소스 분석 결과, `MoneyValue` 및 `MoneyText` UI 컴포넌트는 내장 글꼴 `SourceHanSerifTC-Bold`에 연결되어 있으며 기본값 `50`과 숫자 글리프 `0–9`도 모두 포함하고 있었습니다. 원인은 Wine prefix 내부의 글꼴 세트와 시스템 글꼴 매핑이 불완전했기 때문입니다.
+`MoneyValue` / `MoneyText` 컴포넌트는 내장 글꼴 `SourceHanSerifTC-Bold`를 사용하며 글꼴 아틀라스에도 `0–9`가 들어 있습니다. 문제는 prefix의 글꼴 세트와 글꼴 매핑이 불완전한 데 있었습니다. 처음 만든 prefix에는 `sourcehansans.ttc`와 `unifont.ttf`만 있었고, `allfonts`를 설치하자 121개 파일(약 284 MB)로 늘었습니다. 이 수치는 환경에 따라 다를 수 있습니다.
 
-초기 생성 시 prefix에 포함된 글꼴 파일:
-
-```text
-sourcehansans.ttc
-unifont.ttf
-```
-
-실제 검증에서 `allfonts`를 설치한 결과, 글꼴 디렉터리의 파일 수는 2개에서 121개(약 284 MB)로 증가했고 Arial, Tahoma, Calibri, Meiryo, WenQuanYi 등의 레지스트리 항목이 정상 등록되었습니다. 이 파일 수와 용량은 실측 환경의 기록이며 시스템 환경에 따라 차이가 있을 수 있습니다.
-
-각 글꼴에는 독립적인 소프트웨어 라이선스가 적용됩니다. 글꼴은 Winetricks를 통해 원본 소스에서 직접 다운로드하여 설치해야 하며, 공개 저장소나 배포용 래퍼에는 글꼴 파일을 포함하지 않는 원칙을 준수합니다.
+각 글꼴에는 각각의 라이선스가 있습니다. Winetricks를 통해 원래 출처에서 설치하십시오. 이 저장소는 글꼴을 일절 배포하지 않습니다.
 
 </details>
 
 <a id="mods"></a>
 
-## 5. Doorstop/BepInEx Mod 복구
+## 5. BepInEx Mod 설치와 복구
 
-전체 복구 사례는 케이스 스터디: [사례: Wine 10 / x86 《활협전》에서 일본어 Mod 로드 복구](cases/japanese-mod.ko.md)를 참조하십시오.
+### 로드 흐름
 
-### Mod 부팅 과정과 아키텍처 규칙
+1. **Doorstop**: Wine이 게임 폴더의 `winhttp.dll`을 로드하고, 이것이 BepInEx Preloader를 시작합니다.
+2. **Preloader**: Unity 기본 라이브러리(corlibs)를 로드하고 환경을 준비합니다.
+3. **Chainloader**: `BepInEx/plugins/` 아래의 Mod를 차례로 로드합니다.
 
-Mod 프레임워크의 실행 흐름은 다음 3단계로 구성됩니다:
-1. **Doorstop 개입**: 위장된 `winhttp.dll`이 게임 실행 즉시 진입점을 확보하고 Preloader를 호출합니다.
-2. **Preloader 준비**: Unity 기반 어셈블리(corlibs)를 로드하고 런타임 환경을 초기화합니다.
-3. **Chainloader 실행**: 체인로더가 준비되면 `BepInEx/plugins/` 디렉터리의 각 Mod 플러그인을 순차적으로 로드합니다.
+세 단계는 Wine에서 각각 함정이 하나씩 있으며, 아래의 세 단계가 이에 대응합니다. 1.05 시절에 이미 설치를 마치고 1.06으로 업그레이드만 한 분은 [1.05에서 1.06으로 업그레이드](#upgrade)만 보시면 됩니다.
 
-아키텍처 규칙: 네이티브 진입점인 `winhttp.dll`은 과거 검증 빌드의 32비트(PE32) 실행 파일과 일치해야 합니다. 플러그인 디렉터리에 위치하는 매니지드 DLL(C# 컴파일 어셈블리)은 아키텍처 중립적일 수 있지만 플러그인 자체의 호환 규격 및 Unity 버전을 준수해야 합니다.
+### 설치 전 점검
 
-### Mod 설치 전 백업 및 안전 확인
+Mod 압축 파일마다 다음을 수행합니다.
 
-각 Mod 압축 파일마다 다음 확인 절차를 진행합니다:
-1. 압축 파일 내부 경로를 확인하여 절대 경로 및 `..` 경로 탐색 위험을 배제합니다.
-2. `winhttp.dll` 등 네이티브 DLL이 x86(32비트) 아키텍처인지 검증합니다.
-3. 덮어쓰게 될 기존 파일 목록을 작성합니다.
-4. 모든 동명 파일을 타임스탬프가 지정된 백업 디렉터리에 보관합니다.
-5. 압축 해제 및 병합 후 각 파일의 SHA-256 해시값을 대조합니다.
-6. 게임을 실행하고 `LogOutput.log`의 수정 시각이 이번 실행 시각과 일치하는지 확인합니다(압축 파일에 남아 있던 이전 로그와의 혼동 방지).
+1. 압축 파일 안의 경로를 확인하여 절대 경로와 `..`가 없는지 봅니다.
+2. `file`로 `winhttp.dll` 같은 네이티브 DLL이 64비트(`PE32+`)인지 확인합니다.
+3. 덮어쓰게 될 파일 목록을 만들고, 먼저 타임스탬프가 붙은 백업 폴더에 복사합니다.
+4. 압축을 푼 뒤 SHA-256을 대조합니다.
+5. 실행한 뒤 `LogOutput.log`가 이번 실행에서 생성된 것인지 확인합니다.
 
-### 1단계: Doorstop 로드
+> 일본어 파일명이 들어 있는 압축 파일은 Finder나 `ditto -x -k`로 푸십시오. macOS 기본 `unzip`은 일본어 파일명에서 오류를 내고 불완전한 파일을 남깁니다.
+{: .callout}
 
-`winecfg → Libraries`에서 게임 실행 파일을 위한 설정을 추가합니다:
+### 1단계: Wine이 Doorstop을 로드하게 하기
+
+Wine은 기본적으로 내장 `winhttp.dll`을 우선 사용합니다. `winecfg`의 Applications 탭에서 `Mortal.exe`를 선택한 뒤 Libraries 탭에 다음을 추가합니다.
 
 ```text
 winhttp = native,builtin
 ```
 
-`Mortal.exe`에만 한정 적용되는 애플리케이션 수준의 DLL override 설정을 권장합니다. 게임 실행 시 프로세스에 로컬 `winhttp.dll`과 BepInEx Preloader가 로드되는지 확인합니다.
+게임 폴더의 `winhttp.dll`은 반드시 64비트여야 합니다. 직접 검증한 것은 [UnityDoorstop 4.4.0](https://github.com/NeighTools/UnityDoorstop/releases/tag/v4.4.0) Windows **x64** 버전입니다.
 
-### 2단계: Unity 버전에 맞는 완전한 corlibs 배치
+### 2단계: 완전한 corlibs 제공
 
-게임에 포함된 `Mortal_Data/Managed/mscorlib.dll`은 크기가 `3,906,048` 바이트로 스트립(일부 코드 제거)되어 있습니다. 반면 Unity `2020.3.49f1` 버전에 부합하는 완전한 비스트립(unstripped) 버전 크기는 `4,065,792` 바이트입니다.
-
-적법한 경로로 확보한 완전한 corlibs를 다음 디렉터리에 배치합니다:
-
-```text
-BepInEx/unstripped_corlib/
-```
-
-`doorstop_config.ini` 파일을 편집합니다:
+게임에 포함된 `Mortal_Data/Managed/mscorlib.dll`은 일부 코드가 제거된 버전(`3,906,048` 바이트)입니다. Unity `2020.3.49f1`의 완전한 버전은 `4,065,792` 바이트입니다. 적법하게 확보한, 버전이 일치하는 완전한 corlibs를 `BepInEx/unstripped_corlib/`에 넣고 `doorstop_config.ini`를 편집합니다.
 
 ```ini
 [General]
@@ -264,81 +245,111 @@ target_assembly = BepInEx\core\BepInEx.Unity.Mono.Preloader.dll
 dll_search_path_override = "BepInEx\unstripped_corlib;BepInEx\core"
 ```
 
-corlibs는 Unity 엔진 버전과 일치해야 하며 Unity의 소프트웨어 이용 규정을 준수해야 합니다. 공개 저장소와 Mod 배포물에는 corlibs 바이너리를 포함하지 않습니다.
+corlibs는 Unity 버전과 완전히 일치해야 하며 Unity의 라이선스를 지켜야 합니다. 이 저장소는 corlibs를 배포하지 않습니다. 1.06에서도 여전히 필요한지는 따로 검증하지 않았으며, 직접 검증한 구성에는 그대로 포함되어 있습니다.
 
-### 3단계: Wine 수정 패치가 적용된 BepInEx 6 적용
+### 3단계: Wine 수정이 포함된 BepInEx 6 사용
 
-교체 전 기존 `BepInEx/core` 디렉터리를 완전히 백업합니다. 코어 파일을 PR #1254 수정 패치가 포함된 x86 Mono 빌드 `6.0.0-be.785`로 교체합니다.
-
-정상 로드 시 기록되는 로그 특징:
-
-```text
-BepInEx 6.0.0-be.785
-Process bitness: 32-bit (x86)
-Chainloader initialized
-```
-
-로그에 `Chainloader initialized`가 나타나면 Mod 프레임워크 초기화가 완료된 상태입니다. 이후 각 플러그인의 로드 로그가 순차적으로 기록됩니다. 검증된 과거 환경에서 DiceMaster 역시 `winhttp` override 미적용, corlibs 스트립, BepInEx 초기화 예외의 영향을 받았으나 본 섹션과 동일한 Doorstop / corlibs / BepInEx Wine 복구 경로를 거쳐 정상 로드되었습니다(이 결론은 검증된 특정 과거 빌드 조합에 한정되며 모든 기능과 향후 버전을 보장하는 것은 아닙니다).
-
-<details markdown="1">
-<summary>BepInEx 예외 로그 및 수정 패치 출처</summary>
-
-이전 버전의 BepInEx 6은 Wine 32비트 환경에서 다음 예외를 일으킬 수 있습니다:
+예전 BepInEx 6(예: `be.692`)은 Wine에서 다음 예외를 일으킬 수 있습니다.
 
 ```text
 InvalidOperationException:
 Cannot set the value of PlatformHelper.Current once it has been accessed.
 ```
 
-해당 문제는 [BepInEx issue #1201](https://github.com/BepInEx/BepInEx/issues/1201)에 보고되었으며 [PR #1254](https://github.com/BepInEx/BepInEx/pull/1254)에서 수정되었습니다.
+이 문제는 [BepInEx issue #1201](https://github.com/BepInEx/BepInEx/issues/1201)에 보고되었고 [PR #1254](https://github.com/BepInEx/BepInEx/pull/1254)에서 수정되었습니다. 먼저 `BepInEx/core`를 백업한 뒤 `6.0.0-be.785`의 Unity.Mono 코어로 교체하십시오.
 
-</details>
+직접 사용하는 환경에서 실제로 쓴 것은 be.785 매니지드 코어와 Doorstop 4.4.0 x64 `winhttp.dll`입니다. 매니지드 코어는 비트 수를 가리지 않으므로, 1.05 시절에 설치한 be.785를 1.06에서도 계속 쓸 수 있습니다. 새로 설치한다면 BepInEx의 win-x64 패키지를 그대로 써도 되지만, 패키지 안의 `winhttp.dll`이 64비트인지는 확인하십시오.
+
+성공하면 로그에 다음 내용이 포함됩니다.
+
+```text
+BepInEx 6.0.0-be.785
+Process bitness: 64-bit (x64)
+Chainloader initialized
+```
+
+<a id="jpmod"></a>
+
+## 6. 일본어 Mod v2.5
+
+일본어 Mod v2.5는 64비트 게임을 대상으로 바뀌었고 게임 내 업데이트 기능이 추가되었습니다. README에는 '전부 덮어쓰기'라고 되어 있지만, Mac에서 통째로 덮어쓰면 BepInEx 코어가 예전 `be.692`로 되돌아가고 `doorstop_config.ini`에서도 `unstripped_corlib` 경로가 사라집니다.
+
+**실측 완료(2026-10-15):** README대로 전부 덮어쓴 뒤 두 가지만 하면 됩니다. ① `BepInEx/core`를 덮어쓰기 전의 be.785로 되돌리고, ② `doorstop_config.ini`를 `dll_search_path_override = "BepInEx\unstripped_corlib;BepInEx\core"`로 고칩니다. 그러면 일본어 Mod, DiceMaster, 세이브 슬롯 확장까지 8개 플러그인이 모두 오류 없이 로드됩니다. v2.5에 포함된 64비트 `winhttp.dll`은 그대로 써도 됩니다. 덮어쓰기만 하면 be.692가 `PlatformHelper.Current` 오류로 멈추고 모든 Mod가 작동하지 않습니다.
+
+Mac에서의 설치 절차와 검증 결과는 일본어 페이지(일본어)인 [日本語化 Mod v2.5 を Mac で導入する](cases/japanese-mod-v2.5.ja.md)를 참고하십시오.
 
 <a id="focus"></a>
 
-## 6. 알려진 문제
+## 7. 알려진 문제: 창 전환 후 제목 표시줄을 클릭해야 함
 
-### 창 전환 후 제목 표시줄 클릭으로 조작 복구
+다른 macOS 앱에서 《활협전》으로 돌아오면 화면은 정상적으로 갱신되지만 키보드, 마우스, 컨트롤러가 반응하지 않는 경우가 있습니다.
 
-현상: 검증 환경에서 게임을 다른 macOS 앱으로 전환했다가 《활협전》으로 복귀했을 때, 화면 렌더링은 유지되지만 키보드, 마우스, 컨트롤러 입력이 게임 창 내부에서 반응하지 않는 경우가 발생합니다.
-
-실제 검증된 즉시 복구 절차:
-1. 《활협전》의 `Mortal` 창으로 다시 전환합니다.
-2. 창 상단의 macOS 제목 표시줄(아래 그림의 빨간색 화살표가 가리키는 어두운 영역)을 1회 클릭합니다.
-3. 게임 화면으로 돌아가 조작을 계속합니다.
+1. `Mortal` 게임 창으로 돌아옵니다.
+2. 창 상단의 어두운 제목 표시줄(아래 그림의 빨간 화살표 위치)을 한 번 클릭합니다.
+3. 게임으로 돌아가 조작을 이어갑니다.
 
 ![Mortal 창 제목 표시줄을 클릭해 게임 입력 복구](assets/window-titlebar-focus-recovery.png)
 
-Steam 전역 오버레이와 《활협전》 개별 오버레이를 끄면 발생 빈도를 줄일 수 있습니다. 제목 표시줄 클릭은 현재 높은 신뢰도로 확인된 즉시 조작 복구 방법입니다. 근본 원인은 조사 중이며 Wine, Unity, macOS 사이의 창 포커스 인수인계 동작과 관련된 현상으로 판단됩니다.
-
-| 게임 버전 | 발생 조건 | 결과 | 증거 | 신뢰도 |
-| --- | --- | --- | --- | --- |
-| Build `20337760` / `release_1.0.5000.13` | 다른 macOS 앱에서 Wine 게임 창으로 복귀 | `Mortal` 제목 표시줄 클릭 후 게임 조작 복구 | 실제 환경 재현 및 스크린샷 | 높음 |
+Steam 전역 오버레이와 이 게임의 오버레이를 끄면 발생 빈도를 줄일 수 있습니다. 이 현상은 1.05 실기에서 재현했고 해결 방법도 확인했으며, 1.06에서는 따로 다시 시험하지 않았습니다. 근본 원인은 아직 조사 중이며, Wine, Unity, macOS 사이의 포커스 전달 이상에서 나타나는 특징과 일치합니다.
 
 <a id="daily"></a>
 
-## 7. 운영 팁
+## 8. 일상 운영 팁
 
-- Steam 전역 설정 및 《활협전》 게임별 설정의 오버레이(Overlay)를 꺼서 앱 전환 시의 입력 잠금 발생 확률을 낮춥니다.
-- 플레이 중에는 `caffeinate` 명령을 활용하여 Mac의 절전 전환을 방지합니다. 화면 덮개 닫힘, 화면 잠금, 외장 모니터 연결 변경이 발생한 경우 게임을 저장한 후 게임, Windows용 Steam, 래퍼 세션을 완전히 재시작하는 것을 권장합니다.
-- 게임과 Steam을 종료할 때는 게임 내 저장을 완료한 후 Windows용 Steam 메뉴의 `Steam → Exit`를 통해 정상 종료하십시오. macOS Dock의 Wine 아이콘은 창 프록시 역할을 수행합니다.
-- Wine을 재시작할 때는 게임을 저장하고 종료한 뒤 해당 게임의 래퍼 세션만 다시 시작합니다.
-- Windows용 Steam을 장시간 백그라운드에 방치할 경우 `-applaunch` 명령에 반응하지 않을 수 있습니다. Steam의 `gameprocess_log.txt`에 기록이 갱신되지 않으면 해당 래퍼의 Steam 및 Wine 세션을 재시작하십시오.
+- Steam 전역 오버레이와 이 게임의 오버레이를 끕니다.
+- 플레이 중에는 `caffeinate`로 시스템이 잠들지 않게 할 수 있습니다. 덮개를 닫아 절전에 들어갔거나, 화면을 잠갔거나, 외장 모니터를 연결·분리한 뒤에는 저장하고 게임, Steam, 래퍼를 다시 시작하는 것을 권장합니다.
+- 종료할 때는 먼저 게임 안에서 저장한 뒤 Windows용 Steam의 `Steam → Exit`를 사용합니다. Dock의 Wine 아이콘은 창 대리 역할일 뿐입니다.
+- Windows용 Steam을 오랫동안 백그라운드에 두면 `-applaunch`에 반응하지 않을 수 있습니다. `gameprocess_log.txt`에 새 기록이 없으면 이 래퍼의 Steam과 Wine 세션을 다시 시작하십시오.
 
 <a id="diagnostics"></a>
 
-## 8. 읽기 전용 검사기
+## 9. 읽기 전용 점검 스크립트
 
 ```bash
 skills/run-legend-of-mortal-on-mac/scripts/inspect-lom-wrapper.sh \
   "/path/to/SteamWin.app"
 ```
 
-이 스크립트는 래퍼 설정, 바이너리 아키텍처, Steam 매니페스트 파일, 레지스트리 설정, 글꼴 수, DXMT 모듈 해시값, BepInEx 로그, 실행 중인 프로세스를 읽기 전용으로 검사합니다(명령의 `/path/to/SteamWin.app`는 래퍼의 실제 경로를 대입하는 플레이스홀더입니다). 본 스크립트는 Wine, Steam, 게임 프로세스를 임의로 실행하거나 종료하지 않으며, 어떠한 파일도 변경하지 않습니다.
+이 스크립트는 래퍼 설정, 게임 아키텍처, Steam 매니페스트, 레지스트리, 글꼴 수, DXMT 모듈 해시, BepInEx 로그, 현재 프로세스를 읽기만 하며, 어떤 프로세스도 시작하거나 종료하지 않고 파일도 수정하지 않습니다. 스크립트는 [프로젝트 저장소](https://github.com/li-yifei/legend-of-mortal-mac-guide)에 있습니다.
+
+## AI 어시스턴트의 도움 받기
+
+Wine이나 터미널이 낯선 분은 이 가이드를 AI 코딩 어시스턴트에게 건네고, 먼저 읽기 전용으로 환경을 점검하게 한 뒤 증상에 따라 처리하게 할 수 있습니다. 다음 사항을 지키십시오.
+
+- Steam 로그인은 직접 수동으로 하고, AI에게 계정 비밀번호나 토큰을 제공하지 않습니다.
+- 파일 교체와 위험한 명령은 먼저 사람이 확인합니다.
+- Engine, prefix, 게임 폴더를 수정하기 전에 타임스탬프가 붙은 백업을 만듭니다.
+
+<a id="legacy"></a>
+
+## 1.05 이전 구성
+
+<details markdown="1">
+<summary>1.05(Build <code>20337760</code>, 32비트)의 검증 환경과 차이점</summary>
+
+2026-08-29에 검증했습니다.
+
+| 항목 | 구성 |
+| --- | --- |
+| 게임 | Build `20337760`, `release_1.0.5000.13` |
+| 실행 파일 | `Mortal.exe`, PE32 / x86 |
+| 래퍼 | Sikarugir Template `1.0.11`, Wine `10.0` |
+| 그래픽 백엔드 | 32비트 DXMT |
+| Mod | Doorstop x86 `winhttp.dll`, BepInEx `6.0.0-be.785` x86 Mono |
+
+1.06과의 차이점:
+
+- `file Mortal.exe`가 `PE32 executable (GUI) Intel 80386`을 표시합니다.
+- 네이티브 구성 요소는 모두 32비트를 선택합니다. `winhttp.dll`은 x86 버전을 쓰고, DXMT를 직접 교체할 때는 `i386-windows` / `i386-unix`에 넣습니다.
+- D3DMetal은 64비트만 지원하므로 1.05에서는 쓸 수 없으며, DXMT가 32비트 D3D10/11 모듈을 제공합니다.
+- 일본어 Mod v2.4와 DiceMaster의 로드 과정은 [일본어 Mod v2.4 사례](cases/japanese-mod.ko.md)를 참고하십시오.
+
+</details>
 
 ## 참고 자료
 
 - [Sikarugir](https://github.com/Sikarugir-App/Sikarugir)
 - [DXMT](https://github.com/3Shain/dxmt)
-- [BepInEx Wine 수정 패치](https://github.com/BepInEx/BepInEx/pull/1254)
+- [UnityDoorstop 4.4.0](https://github.com/NeighTools/UnityDoorstop/releases/tag/v4.4.0)
+- [BepInEx Wine 수정 패치(PR #1254)](https://github.com/BepInEx/BepInEx/pull/1254)
 - [《활협전》 일본어 Mod](https://dlaqe2334.github.io/LOM-JPMOD/)

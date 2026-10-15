@@ -1,0 +1,58 @@
+---
+---
+
+@import "minima";
+
+/* Short language nav: always visible, never collapses into a menu. */
+.site-nav.lom-nav {
+  float: right;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 20px;
+  line-height: 54px;
+  position: static;
+  border: 0;
+  background: transparent;
+  .page-link { margin: 0; padding: 0; color: $text-color; display: inline; }
+  .page-link.is-current { font-weight: 700; text-decoration: underline; }
+}
+@media screen and (max-width: 600px) {
+  .site-title { float: none; display: block; line-height: 44px; }
+  .site-nav.lom-nav { float: none; line-height: 36px; padding-bottom: 6px; }
+}
+
+/* On narrow screens, wide tables and code scroll inside themselves instead of widening the page. */
+.page-content pre { overflow-x: auto; }
+.page-content td code, .page-content p code, .page-content li code { overflow-wrap: anywhere; }
+@media screen and (max-width: 800px) {
+  .page-content table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Version / warning callouts: add {: .callout} or {: .callout .warn} after a blockquote. */
+blockquote.callout {
+  font-style: normal;
+  font-size: 1rem;
+  letter-spacing: 0;
+  color: $text-color;
+  border-left: 4px solid #2a7ae2;
+  background: #f2f7fd;
+  padding: 12px 16px;
+  border-radius: 4px;
+  > :last-child { margin-bottom: 0; }
+}
+blockquote.callout.warn { border-left-color: #d9822b; background: #fdf5ec; }
+
+/* In-page table of contents. */
+#markdown-toc {
+  background: #f7f7f7;
+  border-radius: 4px;
+  padding: 12px 16px 12px 32px;
+  font-size: 0.95rem;
+}
+details { margin: 0 0 15px; }
+summary { cursor: pointer; font-weight: 600; }

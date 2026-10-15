@@ -1,0 +1,11 @@
+<header class="site-header" role="banner">
+  <div class="wrapper">
+    <a class="site-title" rel="author" href="{{ "/" | relative_url }}">{{ site.title | escape }}</a>
+    <nav class="site-nav lom-nav" aria-label="Language">
+      {%- for item in site.nav -%}
+        {%- assign item_url = item.url | relative_url -%}
+        <a class="page-link{% if page.url == item.url %} is-current{% endif %}" href="{{ item_url }}" lang="{{ item.lang }}">{{ item.title }}</a>
+      {%- endfor -%}
+    </nav>
+  </div>
+</header>

@@ -1,12 +1,15 @@
 ---
 layout: page
-title: 사례: Wine 10 / x86 《활협전》에서 일본어 Mod 로드 복구
+title: "사례: Wine 10 / x86 《활협전》에서 일본어 Mod 로드 복구"
 permalink: /docs/cases/japanese-mod.ko/
+redirect_from:
+  - /docs/cases/japanese-mod.ko.html
 ---
 
-[한국어 가이드로 돌아가기](../guide.ko.md) · [繁體中文](../guide.zht.md) · [简体中文](japanese-mod.zhs.md) · [日本語](japanese-mod.ja.md)
+[한국어 가이드로 돌아가기](../guide.ko.md) · [简体中文](japanese-mod.zhs.md) · [日本語](japanese-mod.ja.md)
 
-> 이 문서는 2026-08-29, Build `20337760`에서 검증한 구버전 절차이며 32비트 구성 요소 선택은 해당 환경을 기준으로 합니다. 게임 1.06(Build `25953419`)의 64비트 진입점 복구는 [1.06 업데이트 사례](game-1.06.ko.md)를 참고하십시오. 각 기능의 검증 범위도 해당 문서에 구분해 두었습니다.
+> 이 문서는 2026-08-29, Build `20337760`에서 검증한 구버전 절차이며 32비트 구성 요소 선택은 해당 환경을 기준으로 합니다. 게임 1.06(Build `25953419`)의 64비트 진입점 복구는 [1.06 업데이트 사례](game-1.06.ko.md)를 참고하십시오. 각 기능의 검증 범위도 해당 문서에 구분해 두었습니다. 일본어 모드 v2.5(64비트)의 Mac 설치는 [v2.5 페이지](japanese-mod-v2.5.ja.md)(일본어)를 참고하십시오.
+{: .callout .warn}
 
 본 문서는 macOS Wine 환경에서 일본어 Mod v2.4를 적용한 실기 검증 사례를 바탕으로, 문제 파악부터 3단계 복구, 동작 검증, 롤백 보호까지의 실제 과정을 다룹니다.
 

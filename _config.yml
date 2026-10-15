@@ -6,10 +6,17 @@ kramdown:
   input: GFM
   hard_wrap: false
   syntax_highlighter: rouge
+  toc_levels: "2"
 plugins:
   - jekyll-seo-tag
-header_pages:
-  - docs/guide.zhs.md
-  - docs/guide.zht.md
-  - docs/guide.ja.md
-  - docs/guide.ko.md
+  - jekyll-relative-links
+  - jekyll-redirect-from
+relative_links:
+  enabled: true
+  collections: false
+# Short language links for the header (replaces minima's full-title header_pages).
+nav:
+  - { title: "简体中文", url: "/docs/guide.zhs/", lang: "zh-Hans" }
+  - { title: "繁體中文", url: "/docs/guide.zht/", lang: "zh-Hant" }
+  - { title: "日本語", url: "/docs/guide.ja/", lang: "ja" }
+  - { title: "한국어", url: "/docs/guide.ko/", lang: "ko" }
