@@ -6,156 +6,98 @@ permalink: /docs/cases/japanese-mod.ja/
 
 [日本語ガイドへ戻る](../guide.ja.md) · [繁體中文](../guide.zht.md) · [简体中文](japanese-mod.zhs.md) · [한국어](japanese-mod.ko.md)
 
-## 結論
+> 本文は 2026-08-29、Build `20337760` の旧版で確認した手順です。32bit コンポーネントの選択はこの構成に対応します。ゲーム 1.06（Build `25953419`）の 64bit 起動入口の修復は [1.06 更新事例](game-1.06.ja.md)を参照してください。各機能の確認状況も記載しています。
 
-macOS環境においてWine 10.0経由で32ビット（x86）版『活俠傳』を実行する場合、日本語化Mod v2.4やDiceMasterをゲームディレクトリに展開しても、デフォルト設定のままでは読み込みに失敗します。この原因は、**WineのDLLオーバーライド未適用**、**ゲーム同梱corlibsのストリップ（型情報削減）によるPreloaderの停止**、および**旧版BepInEx 6のWine環境におけるプラットフォーム初期化例外**という3つの要因が連鎖しているためです。
+本書は、macOS Wine 環境下で日本語化 Mod v2.4 を導入した際の実機検証事例に基づき、障害の特定から 3 段階の修復、動作確認、ロールバック保護までの実践手順を解説します。
 
-アプリケーション個別の`winhttp`オーバーライド設定、Unity `2020.3.49f1`に完全一致する未ストリップ版corlibsの配置と探索パスの指定、およびWine初期化修正を取り込んだBepInEx `6.0.0-be.785`（x86 Mono）への更新を実施することでロードチェーンが正常化します。これによりChainloaderによって5個のプラグインすべてが読み込まれ、72,977行の日本語テキストのインジェクション（差し替え適用）が完了します。
+## 主要用語の解説
 
-なお、同環境で起動不能となっていた**DiceMaster Mod**についても、基盤となるBepInExランタイム環境が同一であるため、**本ケースとまったく同じDoorstop / corlibs / BepInEx Wine修復手順を適用することで正常にロード・動作します**。
-
-## 適用条件
-
-| 項目 | 適用 / 検証条件 |
+| 用語 | 概要 |
 | --- | --- |
-| ゲームバージョン | Steam AppID `1859910`、Build ID `20337760`（`release_1.0.5000.13`） |
-| Unityエンジン | `2020.3.49f1` |
-| プロセスアーキテクチャ | `Mortal.exe`、PE32 / x86（32ビット） |
-| 動作環境 | Sikarugir Wine `10.0`（64ビットPrefix / 32ビットDXMT） |
-| 対象Mod | [日本語化Mod v2.4](https://dlaqe2334.github.io/LOM-JPMOD/)、DiceMaster 1.0.0 |
-| BepInExバージョン | 当初 `6.0.0-be.692` → 修正検証版 `6.0.0-be.785` x86 Mono |
+| Doorstop | 起動エントリ注入ツール。偽装した `winhttp.dll` を介してゲーム起動時に割り込み、Preloader を呼び出します。 |
+| corlibs | Unity Mono ランタイムの基礎クラスライブラリ。不要なコードが削られたストリップ版と完全な未ストリップ版（unstripped）があります。 |
+| BepInEx | Unity ゲーム向けの汎用 Mod プラグイン読み込み・管理フレームワーク。 |
+| Preloader | BepInEx の先行ローダー。ゲーム本体の処理が始まる前に実行環境を整え、必要な依存関係を準備します。 |
+| Chainloader | BepInEx のチェーンローダー。`BepInEx/plugins/` 配下の各 Mod プラグインを順次読み込みます。 |
+
+## 検証条件
+
+| 項目 | 条件 |
+| --- | --- |
+| ゲーム | Steam AppID `1859910`、Build ID `20337760` |
+| Unity | `2020.3.49f1` |
+| プロセスアーキテクチャ | `Mortal.exe`、PE32 / x86 |
+| Wine | Sikarugir Wine `10.0` |
+| Mod | [日本語化Mod v2.4](https://dlaqe2334.github.io/LOM-JPMOD/) |
+| 以前の BepInEx | `6.0.0-be.692` |
+| 動作確認済みバージョン | `6.0.0-be.785` x86 Mono |
 | 検証日 | 2026-08-29 |
 
-## 最短修復手順
+## 1. 発生した問題とアーカイブの安全性確認
 
-1. **DLLオーバーライドの設定**：`winecfg`の「ライブラリ（Libraries）」タブで、`Mortal.exe`に対して`winhttp = native,builtin`を追加する。
-2. **未ストリップ版corlibsの配置**：Unity `2020.3.49f1`に合致する未ストリップ版corlibs一式を`BepInEx/unstripped_corlib/`へ配置し、`doorstop_config.ini`に`dll_search_path_override = "BepInEx\unstripped_corlib;BepInEx\core"`を設定する。
-3. **BepInEx Coreの更新**：`BepInEx/core`をWine初期化修正（PR #1254）適用済みのx86 Monoビルド**`6.0.0-be.785`**に一式差し替える（エントリポイントは既定の`Application::.cctor`を維持）。
-4. **ゲーム内言語の設定**：ゲームを起動し、設定メニューでゲーム内言語を「簡体字中国語（简体中文）」に設定する。
+日本語化 Mod v2.4 をゲームディレクトリへ展開した直後は、ゲーム自体は起動するものの日本語翻訳がまったく反映されませんでした。ログを確認したところ、処理が Chainloader の初期化前に停止していました。
 
-## 成功判定基準
+導入および調査の前に、Mod アーカイブの安全確認を実施しました：
+1. ZIP アーカイブの完全性を検証し、ファイル破損を排除します。
+2. アーカイブ内のパスを確認し、絶対パスや `..` によるパストラバーサルリスクを排除します。
+3. アーカイブ内のネイティブ DLL が 32 ビット（x86）アーキテクチャであることを確認します。
+4. 上書き対象となる既存ファイルをタイムスタンプ付きの独立ディレクトリへ退避します。
+5. 展開およびマージ後にファイルのハッシュ値を照合し、既存の DiceMaster DLL や設定ファイルが保持されていることを確認します。
 
-- [x] **ログの正常出力**：`BepInEx/LogOutput.log`に`BepInEx 6.0.0-be.785`、`Process bitness: 32-bit (x86)`、`Chainloader initialized`が出力されていること。
-- [x] **全プラグインのロード完了**：5個のプラグイン（`plugin by Binarizer 1.0.0`、`DiceMaster 1.0.0`、`LOM JP Font Patch 0.2.44`、`LOM JP Ruby Prototype 0.15.113`、`LOM JP String Vault 0.1.0`）がエラーなくロードされていること。
-- [x] **日本語表示とショートカット動作**：ゲーム内テキスト72,977行が正常に置換表示され、`F5`キーでルビ表示切り替え、`F7`キーで表示モード切り替えが機能すること。
-- [x] **DiceMasterの正常動作**：DiceMasterのコンソールおよび機能がゲーム内で正常に呼び出せること。
+## 2. 3段階の修復手順と要因の分析
 
----
+### ステップ1：Doorstop をロードする（エントリ未割り込み問題の解決）
 
-## 1. 問題の現象と根本原因
+要因分析：Wine は既定で内部組み込みの `winhttp.dll` を優先するため、ゲームディレクトリに配置した Mod 起動用 `winhttp.dll` が読み込まれません。
 
-### 発生する問題と症状
+対応手順：`winecfg` のライブラリ（Libraries）設定を開き、`Mortal.exe` 向けにアプリケーション固有の DLL override を追加します：
 
-日本語化Mod v2.4やDiceMasterのアーカイブを展開してゲームディレクトリに配置しても、以下の不具合が発生します。
-- ゲーム自体は起動するもののModが一切適用されず、テキストが中国語のままでMod画面も表示されない。
-- `BepInEx/LogOutput.log`が生成されない・更新されない、またはPreloader段階で静かに処理が中断（サイレント終了）する。
-- デバッグ出力やコンソールを有効にしている場合、初期化処理中に`PlatformHelper.Current`例外が発生してプロセスが停止する。
+```text
+winhttp = native,builtin
+```
 
-### 根本原因の分析
+動作結果：プロセスにローカルの `winhttp.dll` が読み込まれ、Preloader が呼び出されるようになりました。ただし、処理は引き続き Chainloader 前で停止しており、次の障害要因の存在が判明しました。
 
-Modの読み込み失敗は、以下の3つの技術的要因が連鎖して発生しています。
-1. **Doorstopインジェクションの無効化**：Wineの既定動作では組み込み（builtin）の`winhttp.dll`が優先されるため、ゲームディレクトリに配置されたネイティブ（native）のDoorstopプロキシDLLが無視され、Preloaderが起動しません。
-2. **corlibsのストリップ（型情報削減）**：ゲーム本体に同梱されている`mscorlib.dll`（約3.90 MB）は型情報やメタデータが削減（ストリップ）されており、BepInEx Preloaderのリフレクション処理に必要な定義が不足しているため、初期化処理が中断します。
-3. **BepInEx 6のWine環境初期化バグ**：旧ビルド（`6.0.0-be.692`など）では、Wine 32ビット環境におけるプラットフォーム判定処理に不具合があり、読み取り専用プロパティへの多重代入による例外がスロー（送出）されます。
+### ステップ2：Unity バージョンに適合する完全な corlibs を配置する（基礎ライブラリ不足の解決）
 
-<details>
-<summary>技術詳細：例外スタックトレースと呼び出しフロー</summary>
+要因分析：ゲーム同梱の Mono ライブラリはストリップ版であり、BepInEx の初期化に必要な完全な API シグネチャが不足していました。
+
+```text
+ゲーム同梱 mscorlib.dll       3,906,048 bytes
+Unity 2020.3.49 完全版        4,065,792 bytes
+```
+
+対応手順：Unity `2020.3.49f1` に適合する完全な未ストリップ版 corlibs を正規の手順で入手し、`BepInEx/unstripped_corlib/` に配置した上で `doorstop_config.ini` の検索パスを指定します：
+
+```ini
+[General]
+enabled = true
+target_assembly = BepInEx\core\BepInEx.Unity.Mono.Preloader.dll
+
+[UnityMono]
+dll_search_path_override = "BepInEx\unstripped_corlib;BepInEx\core"
+```
+
+動作結果：Preloader が正常に実行され、ログに `Done` が記録されました。corlibs は Unity エンジンのバージョンと厳密に一致させ、Unity のソフトウェア利用規約に従って使用します。
+
+### ステップ3：Wine 修正を含む BepInEx 6 へ更新する（プラットフォーム判定例外の解決）
+
+要因分析：旧バージョンの BepInEx `6.0.0-be.692` は、Wine 32 ビット環境下でプラットフォーム補助クラスを初期化する際に例外を発生させました：
 
 ```text
 InvalidOperationException:
 Cannot set the value of PlatformHelper.Current once it has been accessed.
-  at BepInEx.PlatformHelper.set_Current (BepInEx.PlatformHelper+Platform value)
-  at BepInEx.Unity.Mono.Preloader.Preloader.Run ()
 ```
 
-- **関連Issue・PR**：[BepInEx issue #1201](https://github.com/BepInEx/BepInEx/issues/1201)にて報告され、[PR #1254](https://github.com/BepInEx/BepInEx/pull/1254)にて修正されました。
-- **Doorstopフックの仕組み**：Windows版Unityプロセスは起動時に`winhttp.dll`をロードします。Doorstopは同名DLLのフックによってUnity Monoランタイムの初期化直前にPreloaderを割り込ませ、Chainloaderを経由して各プラグインDLLを読み込みます。
+この問題は [BepInEx issue #1201](https://github.com/BepInEx/BepInEx/issues/1201) で報告され、[PR #1254](https://github.com/BepInEx/BepInEx/pull/1254) にて修正されています。
 
-</details>
+対応手順：既存の `BepInEx/core` を完全にバックアップした上で、修正パッチを含む x86 Mono ビルド `6.0.0-be.785` へ差し替えます。エントリポイントは既定の `Application::.cctor` を維持します。
 
----
+## 3. 検証成功とプラグインの動作確認
 
-## 2. トラブルシューティングの事前確認と診断
+上記 3 つの修復を完了してゲームを起動した結果、Mod フレームワークと各プラグインが正常に読み込まれました。
 
-修復作業を開始する前に、以下の項目を確認します。
-
-1. **プロセスアーキテクチャの確認**：`Mortal.exe`が32ビット（PE32 / x86）バイナリであることを確認する。
-2. **DLLオーバーライドの登録状態**：Wine prefixのレジストリまたは`winecfg`で`Mortal.exe`に対する`winhttp`の設定有無を確認する。
-3. **corlibsの整合性確認**：ゲームディレクトリ内の`mscorlib.dll`と未ストリップ版のファイルサイズを比較する。
-4. **BepInEx Coreバージョンの確認**：`BepInEx/core`内のバイナリがWine初期化修正版であるかを確認する。
-5. **Modアーカイブの安全性確認**：展開前にアーカイブ内に絶対パスや`..`を含むパストラバーサル（Path Traversal）構造がないこと、およびネイティブDLLがx86向けであることを確認する。
-
-<details>
-<summary>技術詳細：アーカイブのセキュリティ確認とファイル比較リスト</summary>
-
-- **ファイルサイズ比較**：
-  ```text
-  ゲーム同梱 mscorlib.dll       3,906,048 bytes (ストリップ版 / Stripped)
-  Unity 2020.3.49 完全版        4,065,792 bytes (未ストリップ版 / Unstripped)
-  ```
-- **ライセンスとセキュリティ境界**：corlibsはUnityエンジンのバージョン（`2020.3.49f1`）と厳密に一致させる必要があります。Unityソフトウェア利用規約を遵守し、正規の手段で取得してください。公開リポジトリや配布パッケージにはフォントやcorlibsのバイナリを同梱しない（再配布を行わない原則を維持する）運用を徹底します。
-- **整合性ハッシュの検証**：上書き展開を行う前に、既存のDiceMaster DLLおよび設定ファイルのSHA-256ハッシュ値を記録・退避し、統合時のファイル破損や競合を防ぎます。
-
-</details>
-
----
-
-## 3. 段階的な修復手順
-
-### 手順 1：アプリケーション個別DLLオーバーライドを設定する
-
-対象Wine prefixの`winecfg`を起動します。
-1. **「ライブラリ（Libraries）」** タブを選択します。
-2. **「アプリケーション設定（Applications）」** で`Mortal.exe`を追加して選択します。
-3. **「新規オーバーライド（New override for library）」** に`winhttp`と入力して追加します。
-4. ロード順序が以下になっていることを確認します。
-   ```text
-   winhttp = native,builtin
-   ```
-
-### 手順 2：Unity 2020.3.49f1未ストリップ版corlibsの配置とDoorstop設定
-
-1. ゲームディレクトリの`BepInEx`内に`unstripped_corlib`ディレクトリを作成します。
-   ```text
-   BepInEx/unstripped_corlib/
-   ```
-2. Unity `2020.3.49f1`に完全一致する未ストリップ版corlibs一式を配置します。
-3. ゲーム直下の`doorstop_config.ini`を作成または編集し、以下を設定します。
-   ```ini
-   [General]
-   enabled = true
-   target_assembly = BepInEx\core\BepInEx.Unity.Mono.Preloader.dll
-
-   [UnityMono]
-   dll_search_path_override = "BepInEx\unstripped_corlib;BepInEx\core"
-   ```
-
-### 手順 3：BepInEx Coreを修正版（6.0.0-be.785）へ更新する
-
-1. 既存の`BepInEx/core`ディレクトリを一括バックアップします。
-2. `BepInEx/core`をPR #1254の修正を含むx86 Monoビルド**`6.0.0-be.785`**の一式に差し替えます。
-3. マネージドエントリポイント（Entrypoint）は既定の`Application::.cctor`のままとします。
-
-### 手順 4：ゲーム内言語を設定する
-
-1. ゲームを起動してメインメニューの設定を開きます。
-2. 言語設定を**「簡体字中国語（简体中文）」**に切り替えます（日本語化Modは簡体字中国語のテキストパイプラインにフックして動作します）。
-
-<details>
-<summary>技術詳細：Doorstop設定項目とMonoアセンブリ探索機構</summary>
-
-- `dll_search_path_override`パラメータにより、Monoランタイムがコアアセンブリを読み込む際に`BepInEx\unstripped_corlib`を最優先で探索し、`Mortal_Data\Managed`内のストリップ版アセンブリに優先して参照します。
-- 既定エントリポイントの`Application::.cctor`は、Unityエンジンの`UnityEngine.Application`クラスの静的コンストラクタ実行時にPreloaderをフックするため、高い互換性と安定性を維持できます。
-
-</details>
-
----
-
-## 4. 動作検証とプラグイン確認
-
-### 1. 起動ログの確認
-
-ゲーム起動後、`BepInEx/LogOutput.log`を開いて以下の出力が含まれていることを確認します。
+フレームワーク初期化完了ログ：
 
 ```text
 BepInEx 6.0.0-be.785
@@ -164,9 +106,7 @@ Process bitness: 32-bit (x86)
 Chainloader initialized
 ```
 
-### 2. プラグイン読み込み一覧の確認
-
-Chainloaderによって全5個のプラグインが正常にロードされ、Error/Fatalログが発生していないことを確認します。
+読み込まれたプラグイン一覧：
 
 ```text
 plugin by Binarizer 1.0.0
@@ -176,69 +116,26 @@ LOM JP Ruby Prototype 0.15.113
 LOM JP String Vault 0.1.0
 ```
 
-### 3. ゲーム内表示とショートカットキーの検証
+実行検証の結果：
+- Chainloader が 5 個のプラグインをすべて正常に読み込みました。
+- ログ出力により 72,977 行の日本語テキスト注入を確認しました。
+- ログに新たな Error や Fatal レベルの例外は発生しませんでした。
+- ゲーム内言語設定を「簡体字中国語」に指定することで日本語字幕が表示されます。
+- ゲーム中に `F5` キーで名前のルビ表示切替、`F7` キーで表示モードの切替が可能です。
+- 本検証環境では、DiceMaster 模组も同様に winhttp override 未設定、corlibs ストリップ、BepInEx 初期化例外の影響を受けていましたが、同一の修復パスを経由することで正常に読み込まれることを確認しました。
 
-- **テキストインジェクション**：ゲームを起動してプレイを開始し、UIおよび会話テキストが日本語に置換されていること（72,977行のテキスト注入成功）を確認します。
-- **ショートカットキー**：
-  - **`F5`**：人名のルビ（振り仮名）表示の切り替え。
-  - **`F7`**：表示モードの切り替え。
+### 歴史的環境での実測まとめ
 
-### 4. DiceMasterおよび複数Modの共存
+| 検証項目 | 検証構成と条件 | 結果 | 証拠と記録 | 確信度 |
+| --- | --- | --- | --- | --- |
+| 日本語化Mod v2.4 読み込み | Build `20337760`、Wine `10.0`、x86 PE32 | 5 個のプラグインがすべて正常にロード | BepInEx ログで Chainloader initialized および 72,977 行テキスト注入を確認 | 高 |
+| DiceMaster 読み込み | 同上環境・同一修復フロー | プラグインが正常にロード・初期化 | ログに `DiceMaster 1.0.0` 出力・異常終了なし | 高 |
 
-**DiceMaster Mod**は日本語化Modと同一のBepInEx 6基盤上で動作します。Wine環境でDiceMasterを単体で導入した場合に発生する問題（`winhttp`オーバーライドの未設定、corlibsのストリップによるPreloader停止、BepInExプラットフォーム例外）は根本的に同一です。そのため、**本修復手順を適用することで、DiceMasterも日本語化Modと同時に正常にロード・動作します**。
+## 4. ロールバックと安全境界
 
-<details>
-<summary>技術詳細：ロード検証ログの完全出力</summary>
+安全に元の状態へ復帰できるよう、3 段階のバックアップを保持します：
+1. **Mod 導入前のバックアップ**：クリーンなゲームディレクトリを保持；
+2. **corlibs 設定前のバックアップ**：元の `doorstop_config.ini` を保持；
+3. **be.785 適用前のバックアップ**：元の `BepInEx/core` ディレクトリを保持。
 
-```text
-[Message:   BepInEx] BepInEx 6.0.0-be.785 - Mortal
-[Info   :   BepInEx] System platform: Windows 10 (Wine 10.0) 64-bit
-[Info   :   BepInEx] Process bitness: 32-bit (x86)
-[Message:   BepInEx] Preloader started
-[Info   :   BepInEx] Loaded 1 patcher method from [BepInEx.Preloader 6.0.0.785]
-[Info   :   BepInEx] 1 patcher result: 1 patch applied
-[Message:   BepInEx] Preloader finished
-[Message:   BepInEx] Chainloader ready
-[Message:   BepInEx] Chainloader initialized
-[Info   :   BepInEx] Loading [plugin by Binarizer 1.0.0]
-[Info   :   BepInEx] Loading [DiceMaster 1.0.0]
-[Info   :   BepInEx] Loading [LOM JP Font Patch 0.2.44]
-[Info   :   BepInEx] Loading [LOM JP Ruby Prototype 0.15.113]
-[Info   :   BepInEx] Loading [LOM JP String Vault 0.1.0]
-```
-
-</details>
-
----
-
-## 5. ロールバック境界と安全対策
-
-### 3段階のロールバック境界
-
-不具合発生時に安全に元の状態へ復元できるよう、以下の段階別ロールバック手順を定めます。
-
-1. **段階 1：Mod導入前の状態への復元**
-   - ゲームディレクトリ下の`BepInEx`、`doorstop_config.ini`、`winhttp.dll`およびModリソース群を削除する。
-   - 事前にバックアップしたオリジナルのゲームファイルを書き戻す。
-2. **段階 2：corlibs設定前の状態への復元**
-   - `BepInEx/unstripped_corlib`ディレクトリを削除する。
-   - `doorstop_config.ini`の`dll_search_path_override`設定を削除または初期値に戻す。
-3. **段階 3：BepInEx Core更新前の状態への復元**
-   - `BepInEx/core`ディレクトリを削除する。
-   - バックアップした旧`BepInEx/core`（`be.692`など）を書き戻す。
-
-### 安全操作ルール
-
-- **プロセスの完全終了**：ファイルのバックアップ、書き換え、ロールバックを行う前に、必ずゲーム、Windows版Steam、および対象prefixのwineserverプロセスを終了（`wineserver -k`）してください。
-- **ディレクトリ単位の一括差し替え・復元**：`BepInEx/core`の差し替え・復元時はディレクトリごと一式で操作し、異なるバージョンのDLLを混在させないでください。
-- **認証情報の隔離**：Modの導入やトラブルシューティング作業において、Steamのアカウント情報やログイン認証情報には一切触れません。
-
-<details>
-<summary>技術詳細：wineserverプロセス管理とセキュリティ境界</summary>
-
-- **Wineセッションの終了コマンド**：
-  ```bash
-  wineserver -k
-  ```
-- **プロセス解放確認**：`Mortal.exe`、`Steam.exe`、`wineserver`の残存プロセスが存在しないことを確認した上でファイルの操作を行ってください。
-</details>
+ロールバックの実施要件：ファイルを復元する前に、必ずゲーム内でセーブを完了した上で、ゲーム、Windows 版 Steam、およびラッパーの wineserver プロセスを完全に終了してください。復元の際は同一段階のファイルを一式で差し戻し、異なる BepInEx ビルドの core DLL を混在させないようにしてください。
