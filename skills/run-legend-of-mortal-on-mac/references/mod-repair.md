@@ -2,6 +2,8 @@
 
 Trace the first missing stage: Doorstop → Preloader → Chainloader → Plugin.
 
+Inspect current `Mortal.exe`, `UnityPlayer.dll`, and native `winhttp.dll` architectures before changing the chain. The x86 case below belongs to Build `20337760`. For 1.06 / Build `25953419`, read [game-1.06-upgrade.md](game-1.06-upgrade.md): x64 Doorstop restored injection while the existing managed BepInEx core and two tested plugins were retained. A managed plugin's PE container alone does not establish a 32-bit requirement; inspect CLR flags and dependencies, then verify its functions.
+
 ## Archive installation
 
 Before merging a Mod archive:
@@ -25,7 +27,7 @@ Confirm local `winhttp.dll` and the BepInEx preloader assembly in the current pr
 
 ## Unstripped corlibs
 
-Verified sizes:
+Historical Build `20337760` verified sizes (recheck Unity and corlibs for the current build):
 
 - game `Mortal_Data/Managed/mscorlib.dll`: `3,906,048` bytes;
 - matching Unity 2020.3.49 full `mscorlib.dll`: `4,065,792` bytes.
@@ -60,7 +62,7 @@ Keep the default `Application::.cctor` entry point. BepInEx can create the stati
 Require a log written by the current launch. Check its modification time and find:
 
 - BepInEx version;
-- Wine platform and x86 process bitness;
+- Wine platform and process bitness matching the current executable;
 - `Chainloader initialized`;
 - every expected plugin's load or initialization line;
 - Error/Fatal output.

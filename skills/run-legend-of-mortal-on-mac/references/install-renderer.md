@@ -6,7 +6,7 @@ Use an independent Sikarugir wrapper. Initialize its prefix, install `cjkfonts`,
 
 Preserve the Windows Steam directory when changing a prefix or engine. Copy it only after the source and destination Steam/Wine processes have exited.
 
-An x86 Steam bootstrap is normal. Inspect `Mortal.exe` directly. The verified build is PE32, making the 32-bit D3D11 path decisive.
+An x86 Steam bootstrap is normal. Inspect `Mortal.exe` directly. Historical Build `20337760` is PE32 and uses the 32-bit D3D11 path. Game 1.06 / Build `25953419` is PE32+ x64; read [game-1.06-upgrade.md](game-1.06-upgrade.md) for that verified setup.
 
 ## Classify startup failures
 
@@ -17,7 +17,7 @@ An x86 Steam bootstrap is normal. Inspect `Mortal.exe` directly. The verified bu
 
 ## DXMT runtime verification
 
-The verified PE32 build uses 32-bit DXMT. Wrapper settings can coexist with WineD3D modules loaded from the engine directory.
+Historical Build `20337760` uses 32-bit DXMT. Resolve the current game architecture and active module paths afresh for every update. Wrapper settings can coexist with WineD3D modules loaded from the engine directory.
 
 Verify with:
 

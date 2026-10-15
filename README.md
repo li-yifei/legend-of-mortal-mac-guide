@@ -8,14 +8,35 @@ Apple Silicon Mac で『活俠傳 / Legend of Mortal』を動かし、フォン�
 
 Apple Silicon Mac에서 《활협전 / Legend of Mortal》을 실행하고 글꼴 및 BepInEx Mod 문제를 해결하기 위한 실기 검증 가이드입니다.
 
-## Human guides
+> 版本入口：游戏 1.06（Build `25953419`）请阅读下方升级案例；四语主指南保留 2026-08-29、Build `20337760` 的旧版配置。各组件的位数和版本随游戏构建核对。
 
-- [简体中文](docs/guide.zhs.md)
-- [繁體中文](docs/guide.zht.md)
-- [日本語](docs/guide.ja.md)
-- [한국어](docs/guide.ko.md)
+## 从这里开始 / Start here
 
-## Case study: Japanese Mod repair
+1.06 更新后 Mod 同时失效，请先看[1.06 升级案例](docs/cases/game-1.06.zhs.md)。存档扩展已获玩家确认，DiceMaster 已确认提示显示；新剧情数值和骰点功能仍待验证。
+
+旧版安装与排障可按下面的步骤阅读：
+
+1. **首次安装**：阅读语言指南第 1 节，建立独立包装器、安装 Windows 版 Steam 并下载游戏；
+2. **启动报错**：若出现 `Failed to initialize graphics` 闪退，按第 2 节检查并配置 DXMT；
+3. **商店数字空白**：若商店物品单价与总计不显示，按第 4 节安装完整字体库；
+4. **加载 Mod / 插件**：按第 5 节与案例研究配置 Doorstop、corlibs 与 BepInEx 6；
+5. **切窗口后无响应**：按第 6 节已知问题，单击窗口顶部标题栏即可恢复控制。
+
+## Human guides / 语言指南
+
+- [简体中文指南](docs/guide.zhs.md)
+- [繁體中文指南](docs/guide.zht.md)
+- [日本語ガイド](docs/guide.ja.md)
+- [한국어 가이드](docs/guide.ko.md)
+
+## 1.06 升级案例 / Game 1.06 update
+
+- [简体中文](docs/cases/game-1.06.zhs.md)
+- [繁體中文](docs/cases/game-1.06.zht.md)
+- [日本語](docs/cases/game-1.06.ja.md)
+- [한국어](docs/cases/game-1.06.ko.md)
+
+## 旧版日文 Mod 案例 / Historical Japanese Mod case
 
 - [简体中文案例](docs/cases/japanese-mod.zhs.md)
 - [日本語ケース](docs/cases/japanese-mod.ja.md)
@@ -31,7 +52,21 @@ skills/run-legend-of-mortal-on-mac/
 
 It covers read-only inspection, Sikarugir/Wine triage, DXMT verification, Wine font repair, Doorstop/BepInEx diagnosis, and reversible changes.
 
-## Verified stack
+## 1.06 verified startup stack
+
+| Component | Verified value (2026-10-15) |
+| --- | --- |
+| Game | AppID `1859910`, Build `25953419`, 1.06, PE32+ / x64 |
+| Unity | `2020.3.49f1` |
+| Doorstop | `4.4.0` Windows x64 |
+| BepInEx | Retained managed core `6.0.0-be.785` |
+| Creator / Template runtime | `1.0.2` / `1.0.22` |
+| Wine | Sikarugir `10.0 revision 8` |
+| DXMT | Template-packaged `v0.80-244-g7c8dee1` |
+
+Plugin feature coverage and machine-specific limits are recorded in the 1.06 cases. Static analysis confirms Japanese Mod v2.5 includes an x64 Doorstop entry and an independent update system, while retaining bundled BepInEx `be.692`. Its macOS runtime compatibility requires separate testing with the Wine fixes preserved.
+
+## Historical verified stack
 
 | Component | Verified value |
 | --- | --- |
@@ -99,6 +134,7 @@ The skill requires explicit user authorization before changing a live wrapper, W
 
 - 问题的探索、验证与文章初稿：GPT-5.6 系列
 - 文稿润色：Gemini 3.7 Flash
+- 2026-10 可读性与语言编辑（不包含新版本技术验证）：Codex + Gemini 3.8 Flash
 
 > 免责：发布者本人懂一些日语，不懂韩语。韩文指南经过 AI 辅助翻译与润色，建议由韩语读者进一步校对。
 

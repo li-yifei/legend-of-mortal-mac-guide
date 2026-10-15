@@ -2,7 +2,11 @@
 
 Use this reference to compare a target environment with the field-tested stack. Treat every value as version-bound.
 
-## Known-good stack
+## Version routing
+
+The table below is the historical 2026-08-29 x86 baseline. For 1.06 / Build `25953419`, use [game-1.06-upgrade.md](game-1.06-upgrade.md): the game is x64, Doorstop `4.4.0` x64 restored injection, and the existing managed BepInEx `be.785` core was retained. Japanese Mod compatibility with that build remains unverified.
+
+## Historical known-good stack
 
 | Component | Verified value |
 | --- | --- |

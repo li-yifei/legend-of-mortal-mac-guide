@@ -37,6 +37,8 @@ Record:
 
 Read [references/verified-case.md](references/verified-case.md) when comparing against the known-good stack.
 
+For game 1.06 / Steam Build `25953419`, read [references/game-1.06-upgrade.md](references/game-1.06-upgrade.md) before applying older x86 advice. Inspect `Mortal.exe` and native Doorstop architecture separately; existing managed plugins may support x64. The older Japanese Mod case remains scoped to Build `20337760`.
+
 ## Route by the first failing layer
 
 1. **Wrapper or Windows Steam startup**: read [references/install-renderer.md](references/install-renderer.md). Separate Steam transport/webhelper failures from game graphics failures.

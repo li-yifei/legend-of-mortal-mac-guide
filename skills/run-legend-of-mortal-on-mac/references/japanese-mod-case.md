@@ -2,6 +2,8 @@
 
 Read this case when installing or diagnosing the Legend of Mortal Japanese Mod on the verified x86/Wine stack. Keep its conclusions bound to the versions below.
 
+This is the historical Build `20337760` case. Japanese Mod compatibility with game 1.06 / Build `25953419` remains unverified. Use [game-1.06-upgrade.md](game-1.06-upgrade.md) for that build's x64 Doorstop repair and its narrower plugin verification results.
+
 ## Conditions
 
 | Component | Case value |
